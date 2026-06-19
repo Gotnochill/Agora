@@ -1,0 +1,43 @@
+import { Role, UserStatus } from "@prisma/client";
+import { redirect } from "next/navigation";
+import { auth, signOut } from "../../../auth";
+
+export default async function DashboardPage() {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/join");
+  }
+
+  if (session.user.status !== UserStatus.ACTIVE) {
+    redirect("/apply");
+  }
+
+  return (
+    <main className="app-shell">
+      <section className="app-card">
+        <p className="section-label">Member dashboard</p>
+        <h1>Welcome, {session.user.name ?? "builder"}.</h1>
+        <p>
+          Your account is active. This dashboard is the starting point for member
+          profiles, resources, achievements, and future leaderboards.
+        </p>
+        {session.user.role === Role.ADMIN ? (
+          <a className="text-link" href="/admin/applications">
+            Review applications
+          </a>
+        ) : null}
+        <form
+          action={async () => {
+            "use server";
+            await signOut({ redirectTo: "/" });
+          }}
+        >
+          <button className="secondary-button" type="submit">
+            Sign out
+          </button>
+        </form>
+      </section>
+    </main>
+  );
+}

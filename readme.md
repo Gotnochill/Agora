@@ -126,3 +126,25 @@ Competitive Programming Portal:
 - Internal Rating System
 
 Note: High development effort and not required for MVP validation.
+
+## Local Development
+
+### Auth and Database Setup
+
+The app uses Auth.js with Google OAuth, Prisma, and Postgres for the authentication and registration foundation.
+
+Required environment variables are listed in `.env.example`.
+
+Google OAuth callback URLs:
+
+- Local: `http://localhost:3000/api/auth/callback/google`
+- Production: `https://YOUR_DOMAIN/api/auth/callback/google`
+
+Useful commands:
+
+- `npm run prisma:generate`
+- `npm run prisma:migrate`
+- `npm run dev`
+- `npm run build`
+
+Registration is application-first. Google sign-in creates the user identity, but member access remains gated until the application is approved by an admin.

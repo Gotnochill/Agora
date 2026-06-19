@@ -14,7 +14,7 @@ export default function Home() {
         <nav className="nav-links">
           <a href="#about">About</a>
           <a href="#community">Community</a>
-          <a href="https://www.linkedin.com/company/shardup">Join</a>
+          <a href="/join">Join</a>
         </nav>
       </header>
 
@@ -25,7 +25,7 @@ export default function Home() {
           through hands-on collaboration and steady feedback.
         </p>
         <div className="hero-actions" aria-label="Primary actions">
-          <a className="button" href="https://www.linkedin.com/company/shardup">
+          <a className="button" href="/join">
             Join the community
           </a>
           <a className="text-link" href="#about">
