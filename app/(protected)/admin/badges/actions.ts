@@ -1,10 +1,38 @@
 "use server";
 
+import { del, put } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../../lib/guards";
-import { badgeSchema } from "../../../../lib/members";
+import { badgeSchema, validateProfilePhoto } from "../../../../lib/members";
 import { prisma } from "../../../../lib/prisma";
+
+function safeFilename(name: string) {
+  return (
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9.]+/g, "-")
+      .slice(0, 80) || "badge"
+  );
+}
+
+async function uploadBadgeImage(badgeId: string, file: File) {
+  const imageError = validateProfilePhoto(file);
+
+  if (imageError) {
+    redirect(`/admin/badges/${badgeId}?error=image`);
+  }
+
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    redirect(`/admin/badges/${badgeId}?error=storage`);
+  }
+
+  const blob = await put(`badge-groups/${badgeId}-${Date.now()}-${safeFilename(file.name)}`, file, {
+    access: "public",
+  });
+
+  return blob.url;
+}
 
 export async function createBadge(formData: FormData) {
   await requireAdmin();
@@ -19,7 +47,7 @@ export async function createBadge(formData: FormData) {
     redirect("/admin/badges?error=invalid");
   }
 
-  await prisma.badge.upsert({
+  const badge = await prisma.badge.upsert({
     where: { name: parsed.data.name },
     update: {
       emoji: parsed.data.emoji,
@@ -32,6 +60,18 @@ export async function createBadge(formData: FormData) {
     },
   });
 
+  const image = formData.get("image");
+
+  if (image instanceof File && image.size > 0) {
+    const imageUrl = await uploadBadgeImage(badge.id, image);
+
+    if (badge.imageUrl) {
+      await del(badge.imageUrl).catch(() => undefined);
+    }
+
+    await prisma.badge.update({ where: { id: badge.id }, data: { imageUrl } });
+  }
+
   revalidatePath("/members");
   revalidatePath("/admin/badges");
   redirect("/admin/badges");
@@ -42,7 +82,12 @@ export async function deleteBadge(formData: FormData) {
   const badgeId = String(formData.get("badgeId") ?? "");
 
   if (badgeId) {
+    const badge = await prisma.badge.findUnique({ where: { id: badgeId } });
     await prisma.badge.delete({ where: { id: badgeId } });
+
+    if (badge?.imageUrl) {
+      await del(badge.imageUrl).catch(() => undefined);
+    }
   }
 
   revalidatePath("/members");
@@ -66,12 +111,91 @@ export async function assignBadge(formData: FormData) {
 
   revalidatePath("/members");
   revalidatePath(`/members/${userId}`);
+  revalidatePath(`/badges/${badgeId}`);
+}
+
+export async function updateBadge(formData: FormData) {
+  await requireAdmin();
+  const badgeId = String(formData.get("badgeId") ?? "");
+
+  if (!badgeId) {
+    redirect("/admin/badges");
+  }
+
+  const parsed = badgeSchema.safeParse({
+    name: formData.get("name"),
+    emoji: formData.get("emoji"),
+    description: formData.get("description"),
+  });
+
+  if (!parsed.success) {
+    redirect(`/admin/badges/${badgeId}?error=invalid`);
+  }
+
+  const badge = await prisma.badge.findUnique({ where: { id: badgeId } });
+
+  if (!badge) {
+    redirect("/admin/badges");
+  }
+
+  let imageUrl = badge.imageUrl;
+  const image = formData.get("image");
+
+  if (image instanceof File && image.size > 0) {
+    imageUrl = await uploadBadgeImage(badge.id, image);
+
+    if (badge.imageUrl) {
+      await del(badge.imageUrl).catch(() => undefined);
+    }
+  }
+
+  await prisma.badge.update({
+    where: { id: badgeId },
+    data: {
+      name: parsed.data.name,
+      emoji: parsed.data.emoji,
+      description: parsed.data.description || null,
+      imageUrl,
+    },
+  });
+
+  revalidatePath("/members");
+  revalidatePath(`/badges/${badgeId}`);
+  revalidatePath(`/admin/badges/${badgeId}`);
+  revalidatePath("/admin/badges");
+  redirect(`/admin/badges/${badgeId}`);
+}
+
+export async function bulkAssignBadge(formData: FormData) {
+  const admin = await requireAdmin();
+  const badgeId = String(formData.get("badgeId") ?? "");
+  const userIds = formData.getAll("userIds").map(String).filter(Boolean);
+
+  if (!badgeId || userIds.length === 0) {
+    return;
+  }
+
+  await prisma.$transaction(
+    userIds.map((userId) =>
+      prisma.memberBadge.upsert({
+        where: { userId_badgeId: { userId, badgeId } },
+        update: {},
+        create: { userId, badgeId, awardedById: admin.id },
+      }),
+    ),
+  );
+
+  revalidatePath("/members");
+  revalidatePath(`/badges/${badgeId}`);
+  revalidatePath(`/admin/badges/${badgeId}`);
+  userIds.forEach((userId) => revalidatePath(`/members/${userId}`));
 }
 
 export async function removeMemberBadge(formData: FormData) {
   await requireAdmin();
   const memberBadgeId = String(formData.get("memberBadgeId") ?? "");
   const userId = String(formData.get("userId") ?? "");
+  const badgeId = String(formData.get("badgeId") ?? "");
 
   if (memberBadgeId) {
     await prisma.memberBadge.delete({ where: { id: memberBadgeId } });
@@ -80,5 +204,9 @@ export async function removeMemberBadge(formData: FormData) {
   revalidatePath("/members");
   if (userId) {
     revalidatePath(`/members/${userId}`);
+  }
+  if (badgeId) {
+    revalidatePath(`/badges/${badgeId}`);
+    revalidatePath(`/admin/badges/${badgeId}`);
   }
 }

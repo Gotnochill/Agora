@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-img-element */
+
 import { requireAdmin } from "../../../../lib/guards";
 import { prisma } from "../../../../lib/prisma";
 import { createBadge, deleteBadge } from "./actions";
@@ -16,7 +18,7 @@ export default async function AdminBadgesPage({
       <section className="app-card workspace-card">
         <p className="section-label">Admin</p>
         <h1>Member badges</h1>
-        <p>Create badges like Hackathon 2026 Winner or Mock Hiring Drive Winner.</p>
+        <p>Create badge groups like Hackathon 2026 Winner or Mock Hiring Drive Winner.</p>
         {searchParams?.error ? (
           <div className="form-message error">Check the badge fields.</div>
         ) : null}
@@ -31,21 +33,31 @@ export default async function AdminBadgesPage({
           <label htmlFor="description">Description</label>
           <textarea id="description" name="description" rows={3} />
 
+          <label htmlFor="image">Badge image</label>
+          <input id="image" name="image" type="file" accept="image/png,image/jpeg,image/webp" />
+
           <button className="button" type="submit">
-            Create badge
+            Create badge group
           </button>
         </form>
 
         <div className="member-badge-admin-list">
           {badges.map((badge) => (
             <article className="member-badge-admin-row" key={badge.id}>
-              <span>{badge.emoji}</span>
+              {badge.imageUrl ? (
+                <img className="badge-admin-thumb" src={badge.imageUrl} alt="" />
+              ) : (
+                <span>{badge.emoji}</span>
+              )}
               <div>
                 <strong>{badge.name}</strong>
                 <small>
                   {badge.description || "No description"} · {badge._count.members} members
                 </small>
               </div>
+              <a className="secondary-button" href={`/admin/badges/${badge.id}`}>
+                Manage
+              </a>
               <form action={deleteBadge}>
                 <input type="hidden" name="badgeId" value={badge.id} />
                 <button className="secondary-button" type="submit">

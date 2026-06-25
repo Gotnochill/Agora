@@ -126,8 +126,18 @@ export default async function MemberProfilePage({ params }: Readonly<{ params: {
               <div className="member-badge-list">
                 {member.memberBadges.map((memberBadge) => (
                   <article className="member-badge" key={memberBadge.id}>
-                    <span>{memberBadge.badge.emoji}</span>
-                    <strong>{memberBadge.badge.name}</strong>
+                    <a className="member-badge-link" href={`/badges/${memberBadge.badgeId}`}>
+                      {memberBadge.badge.imageUrl ? (
+                        <img
+                          className="member-badge-image"
+                          src={memberBadge.badge.imageUrl}
+                          alt=""
+                        />
+                      ) : (
+                        <span>{memberBadge.badge.emoji}</span>
+                      )}
+                      <strong>{memberBadge.badge.name}</strong>
+                    </a>
                     {memberBadge.badge.description ? (
                       <small>{memberBadge.badge.description}</small>
                     ) : null}
@@ -135,6 +145,7 @@ export default async function MemberProfilePage({ params }: Readonly<{ params: {
                       <form action={removeMemberBadge}>
                         <input type="hidden" name="memberBadgeId" value={memberBadge.id} />
                         <input type="hidden" name="userId" value={member.id} />
+                        <input type="hidden" name="badgeId" value={memberBadge.badgeId} />
                         <button className="text-link" type="submit">
                           Remove
                         </button>

@@ -28,30 +28,41 @@ export default async function MembersPage() {
             const name = memberDisplayName(member);
 
             return (
-              <a className="member-card" href={`/members/${member.id}`} key={member.id}>
-                {member.profile?.photoUrl ? (
-                  <img className="member-avatar" src={member.profile.photoUrl} alt="" />
-                ) : (
-                  <span className="member-avatar member-avatar-fallback">
-                    {memberInitials(name)}
+              <article className="member-card" key={member.id}>
+                <a className="member-card-profile" href={`/members/${member.id}`}>
+                  {member.profile?.photoUrl ? (
+                    <img className="member-avatar" src={member.profile.photoUrl} alt="" />
+                  ) : (
+                    <span className="member-avatar member-avatar-fallback">
+                      {memberInitials(name)}
+                    </span>
+                  )}
+                  <span>
+                    <strong>{name}</strong>
+                    <small>{member.profile?.college || "College not added"}</small>
+                    <small>
+                      {[member.profile?.batch, member.profile?.branch]
+                        .filter(Boolean)
+                        .join(" · ") || "Batch details pending"}
+                    </small>
                   </span>
-                )}
-                <span>
-                  <strong>{name}</strong>
-                  <small>{member.profile?.college || "College not added"}</small>
-                  <small>
-                    {[member.profile?.batch, member.profile?.branch].filter(Boolean).join(" · ") ||
-                      "Batch details pending"}
-                  </small>
-                </span>
+                </a>
                 {member.memberBadges.length > 0 ? (
                   <span className="member-card-badges" aria-label="Badges">
-                    {member.memberBadges.map((memberBadge) => (
-                      <span key={memberBadge.id}>{memberBadge.badge.emoji}</span>
-                    ))}
+                    {member.memberBadges.map((memberBadge) =>
+                      memberBadge.badge.imageUrl ? (
+                        <a href={`/badges/${memberBadge.badgeId}`} key={memberBadge.id}>
+                          <img src={memberBadge.badge.imageUrl} alt={memberBadge.badge.name} />
+                        </a>
+                      ) : (
+                        <a href={`/badges/${memberBadge.badgeId}`} key={memberBadge.id}>
+                          {memberBadge.badge.emoji}
+                        </a>
+                      ),
+                    )}
                   </span>
                 ) : null}
-              </a>
+              </article>
             );
           })}
         </div>
