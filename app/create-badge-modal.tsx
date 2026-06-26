@@ -3,7 +3,7 @@ import CompressingImageInput from "./compressing-image-input";
 
 const errors: Record<string, string> = {
   invalid: "Check the badge name and description.",
-  image: "Upload a JPG, PNG, or WebP badge image under 2MB.",
+  image: "Upload a JPG, PNG, WebP, or SVG badge image under 2MB.",
   storage: "Badge image storage is not configured yet. Add BLOB_READ_WRITE_TOKEN.",
 };
 

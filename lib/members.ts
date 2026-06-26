@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const MAX_PROFILE_PHOTO_BYTES = 2 * 1024 * 1024;
-export const PROFILE_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+export const PROFILE_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp", "image/svg+xml"];
 
 const optionalUrl = z
   .string()
@@ -60,7 +60,7 @@ export function validateProfilePhoto(file: File) {
   }
 
   if (!PROFILE_PHOTO_TYPES.includes(file.type)) {
-    return "Upload a JPG, PNG, or WebP image.";
+    return "Upload a JPG, PNG, WebP, or SVG image.";
   }
 
   if (file.size > MAX_PROFILE_PHOTO_BYTES) {
