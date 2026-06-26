@@ -8,6 +8,40 @@
   --font-main: Arial, Helvetica, sans-serif;
   --page-gutter: 24px;
   --page-max: 1440px;
+
+  /* State Backgrounds */
+  --surface-hover: #f4fff7;
+  --surface-pinned: #ecfff2;
+  --surface-warning: #fff8e6;
+  --surface-error: #fff5f3;
+}
+
+[data-theme="dark"] {
+  --paper: #151a23; 
+  --ink: #f0f6fc;  
+  --muted: #8b949e; 
+  --surface: #1c212b; 
+  --line: #30363d;
+  
+  --accent: #21e065; 
+  --accent-strong: #2ef074; 
+
+  /* Dark State Backgrounds */
+  --surface-hover: #1f2e24;
+  --surface-pinned: #192b1f;
+  --surface-warning: #2b2513;
+  --surface-error: #2e1a18;
+}
+
+/* Keep primary buttons readable on bright green backgrounds */
+[data-theme="dark"] .button {
+  color: #111;
+  border-color: #111;
+  box-shadow: 5px 5px 0 #111;
+}
+
+[data-theme="dark"] .button:hover {
+  box-shadow: 4px 4px 0 #111;
 }
 
 * {
