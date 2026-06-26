@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
-import CodeMirror from "@uiw/react-codemirror";
+import CodeMirror, { EditorView } from "@uiw/react-codemirror";
 import { cpp } from "@codemirror/lang-cpp";
 import { python } from "@codemirror/lang-python";
 import { oneDark } from "@codemirror/theme-one-dark";
@@ -48,6 +48,22 @@ const starterCode: Record<string, string> = {
 function languageExtensions(language: string) {
   return language === "cpp" ? [cpp()] : [python()];
 }
+
+// Anti-cheat: block copy/cut/paste, drag-drop, and the right-click menu in the editor.
+// Client-side deterrent only — it stops casual copy-pasting, not determined bypassing.
+function blockEvent(event: Event) {
+  event.preventDefault();
+  return true;
+}
+
+const blockClipboard = EditorView.domEventHandlers({
+  paste: blockEvent,
+  copy: blockEvent,
+  cut: blockEvent,
+  drop: blockEvent,
+  dragstart: blockEvent,
+  contextmenu: blockEvent,
+});
 
 const draftKey = (slug: string, language: string) => `shardup:draft:${slug}:${language}`;
 
@@ -138,7 +154,7 @@ export function SubmissionPanel({
               lineNumbers: true,
             }}
             editable={!isRunning}
-            extensions={languageExtensions(language)}
+            extensions={[...languageExtensions(language), blockClipboard]}
             height="360px"
             onChange={handleCodeChange}
             theme={oneDark}

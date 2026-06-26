@@ -874,6 +874,12 @@ img {
   margin-top: 28px;
 }
 
+/* Anti-cheat: make the problem prompt unselectable so it can't be copied. */
+.problem-readonly {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 .problem-statement {
   max-width: 760px;
   color: var(--muted);
