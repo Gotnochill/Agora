@@ -131,6 +131,24 @@ export default async function MemberProfilePage({
                 <CreateBadgeModal error={searchParams?.error} returnTo={`/members/${member.id}`} />
               </div>
             ) : null}
+
+            {isAdmin && availableBadges.length ? (
+              <form action={assignBadge} className="stacked-form member-badge-form">
+                <input type="hidden" name="userId" value={member.id} />
+                <label htmlFor="badgeId">Assign badge</label>
+                <select id="badgeId" name="badgeId" required>
+                  {availableBadges.map((badge) => (
+                    <option key={badge.id} value={badge.id}>
+                      {badge.name}
+                    </option>
+                  ))}
+                </select>
+                <button className="secondary-button" type="submit">
+                  Add badge
+                </button>
+              </form>
+            ) : null}
+
             {member.memberBadges.length ? (
               <div className="member-badge-list">
                 {member.memberBadges.map((memberBadge) => (
@@ -152,23 +170,6 @@ export default async function MemberProfilePage({
             ) : (
               <p>No badges yet.</p>
             )}
-
-            {isAdmin && availableBadges.length ? (
-              <form action={assignBadge} className="stacked-form member-badge-form">
-                <input type="hidden" name="userId" value={member.id} />
-                <label htmlFor="badgeId">Assign badge</label>
-                <select id="badgeId" name="badgeId" required>
-                  {availableBadges.map((badge) => (
-                    <option key={badge.id} value={badge.id}>
-                      {badge.name}
-                    </option>
-                  ))}
-                </select>
-                <button className="secondary-button" type="submit">
-                  Add badge
-                </button>
-              </form>
-            ) : null}
           </section>
         </aside>
       </section>
