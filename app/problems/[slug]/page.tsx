@@ -80,6 +80,7 @@ export default async function ProblemDetailPage({
   }
 
   const canSubmit = session?.user?.status === "ACTIVE";
+  const isAdmin = session?.user?.role === "ADMIN" && session.user.status === "ACTIVE";
 
   return (
     <main className="app-shell wide-card workspace-shell">
@@ -90,6 +91,11 @@ export default async function ProblemDetailPage({
           <span>{difficultyLabels[problem.difficulty]}</span>
           {problem.tags.length > 0 ? problem.tags.map((tag) => <span key={tag}>{tag}</span>) : null}
         </div>
+        {isAdmin ? (
+          <a className="secondary-button" href={`/admin/problems/${problem.slug}`}>
+            View reference solution
+          </a>
+        ) : null}
 
         <div className="problem-readonly">
           <div className="problem-statement">{problem.statement}</div>
