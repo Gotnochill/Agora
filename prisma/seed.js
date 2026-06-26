@@ -1,6 +1,7 @@
 const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
+const TOP_PRACTICE_BADGE_NAME = "Practice Champion";
 
 async function main() {
   const events = [
@@ -517,6 +518,61 @@ async function main() {
     await prisma.testCase.deleteMany({ where: { problemId: savedProblem.id } });
     await prisma.testCase.createMany({
       data: testCases.map((testCase) => ({ ...testCase, problemId: savedProblem.id })),
+    });
+  }
+
+  const practiceChampionBadge = await prisma.badge.upsert({
+    where: { name: TOP_PRACTICE_BADGE_NAME },
+    update: {
+      description: "Automatically held by the current #1 on the practice leaderboard.",
+      xp: 0,
+    },
+    create: {
+      name: TOP_PRACTICE_BADGE_NAME,
+      description: "Automatically held by the current #1 on the practice leaderboard.",
+      xp: 0,
+    },
+    select: { id: true },
+  });
+  const publishedProblemIds = await prisma.problem.findMany({
+    where: { published: true },
+    select: { id: true },
+  });
+  const acceptedSubmissions = await prisma.submission.findMany({
+    where: {
+      verdict: "ACCEPTED",
+      problemId: { in: publishedProblemIds.map((problem) => problem.id) },
+    },
+    distinct: ["problemId", "userId"],
+    select: { problemId: true, userId: true },
+  });
+  const solvedCounts = acceptedSubmissions.reduce((counts, submission) => {
+    counts[submission.userId] = (counts[submission.userId] || 0) + 1;
+    return counts;
+  }, {});
+  const users = await prisma.user.findMany({
+    where: { id: { in: Object.keys(solvedCounts) } },
+    select: { id: true, name: true, email: true, profile: { select: { displayName: true } } },
+  });
+  const userById = new Map(users.map((user) => [user.id, user]));
+  const practiceLeader = Object.entries(solvedCounts)
+    .map(([userId, solvedCount]) => {
+      const user = userById.get(userId);
+      return {
+        userId,
+        solvedCount,
+        name: (user && (user.profile?.displayName || user.name)) || "ShardUp member",
+      };
+    })
+    .sort(
+      (left, right) => right.solvedCount - left.solvedCount || left.name.localeCompare(right.name),
+    )[0];
+
+  await prisma.memberBadge.deleteMany({ where: { badgeId: practiceChampionBadge.id } });
+
+  if (practiceLeader) {
+    await prisma.memberBadge.create({
+      data: { badgeId: practiceChampionBadge.id, userId: practiceLeader.userId },
     });
   }
 

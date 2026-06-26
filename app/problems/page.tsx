@@ -1,5 +1,6 @@
 import { SubmissionVerdict } from "@prisma/client";
 import { auth } from "../../auth";
+import { rankPracticeUsers } from "../../lib/practice";
 import { prisma } from "../../lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -61,20 +62,7 @@ export default async function ProblemsPage() {
       profile: { select: { displayName: true } },
     },
   });
-  const userById = new Map(users.map((user) => [user.id, user]));
-  const leaderboard = Object.entries(solvedCounts)
-    .map(([userId, solvedCount]) => {
-      const user = userById.get(userId);
-      return {
-        userId,
-        solvedCount,
-        name: user?.profile?.displayName ?? user?.name ?? "ShardUp member",
-      };
-    })
-    .sort(
-      (left, right) => right.solvedCount - left.solvedCount || left.name.localeCompare(right.name),
-    )
-    .slice(0, 10);
+  const leaderboard = rankPracticeUsers(acceptedSubmissions, users).slice(0, 10);
   const warmupProblem = problems.find((problem) => problem.slug === WARMUP_PROBLEM_SLUG);
   const sheetProblems = [
     ...(warmupProblem ? [warmupProblem] : []),

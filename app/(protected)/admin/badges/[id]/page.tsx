@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import CompressingImageInput from "../../../../compressing-image-input";
 import { requireAdmin } from "../../../../../lib/guards";
 import { memberDisplayName, memberInitials } from "../../../../../lib/members";
+import { TOP_PRACTICE_BADGE_NAME } from "../../../../../lib/practice";
 import { prisma } from "../../../../../lib/prisma";
 import { bulkAssignBadge, removeMemberBadge, updateBadge } from "../actions";
 
@@ -34,11 +35,14 @@ export default async function AdminBadgeGroupPage({
   }
 
   const assignedIds = new Set(badge.members.map((memberBadge) => memberBadge.userId));
-  const availableMembers = await prisma.user.findMany({
-    where: { status: UserStatus.ACTIVE, id: { notIn: Array.from(assignedIds) } },
-    include: { profile: true },
-    orderBy: [{ profile: { displayName: "asc" } }, { name: "asc" }],
-  });
+  const isPracticeChampionBadge = badge.name === TOP_PRACTICE_BADGE_NAME;
+  const availableMembers = isPracticeChampionBadge
+    ? []
+    : await prisma.user.findMany({
+        where: { status: UserStatus.ACTIVE, id: { notIn: Array.from(assignedIds) } },
+        include: { profile: true },
+        orderBy: [{ profile: { displayName: "asc" } }, { name: "asc" }],
+      });
 
   return (
     <main className="app-shell wide-card workspace-shell">
@@ -64,7 +68,13 @@ export default async function AdminBadgeGroupPage({
             )}
 
             <label htmlFor="name">Badge name</label>
-            <input id="name" name="name" defaultValue={badge.name} required />
+            <input
+              id="name"
+              name="name"
+              defaultValue={badge.name}
+              readOnly={isPracticeChampionBadge}
+              required
+            />
 
             <label htmlFor="description">Group description</label>
             <textarea
@@ -75,7 +85,14 @@ export default async function AdminBadgeGroupPage({
             />
 
             <label htmlFor="xp">Experience points</label>
-            <input id="xp" name="xp" type="number" min={0} defaultValue={badge.xp} />
+            <input
+              id="xp"
+              name="xp"
+              type="number"
+              min={0}
+              defaultValue={badge.xp}
+              readOnly={isPracticeChampionBadge}
+            />
 
             <label htmlFor="image">Badge image</label>
             <CompressingImageInput id="image" name="image" />
@@ -89,7 +106,11 @@ export default async function AdminBadgeGroupPage({
             <p className="section-label">Group members</p>
             <h2>{badge.members.length} assigned</h2>
 
-            {availableMembers.length ? (
+            {isPracticeChampionBadge ? (
+              <div className="form-message">
+                Automatically held by the current #1 on the practice leaderboard.
+              </div>
+            ) : availableMembers.length ? (
               <form action={bulkAssignBadge} className="stacked-form member-badge-form">
                 <input type="hidden" name="badgeId" value={badge.id} />
                 <span className="form-label">Add members</span>
@@ -133,14 +154,16 @@ export default async function AdminBadgeGroupPage({
                       <strong>{name}</strong>
                       <small>{memberBadge.user.email}</small>
                     </div>
-                    <form action={removeMemberBadge}>
-                      <input type="hidden" name="memberBadgeId" value={memberBadge.id} />
-                      <input type="hidden" name="userId" value={memberBadge.userId} />
-                      <input type="hidden" name="badgeId" value={badge.id} />
-                      <button className="secondary-button" type="submit">
-                        Remove
-                      </button>
-                    </form>
+                    {isPracticeChampionBadge ? null : (
+                      <form action={removeMemberBadge}>
+                        <input type="hidden" name="memberBadgeId" value={memberBadge.id} />
+                        <input type="hidden" name="userId" value={memberBadge.userId} />
+                        <input type="hidden" name="badgeId" value={badge.id} />
+                        <button className="secondary-button" type="submit">
+                          Remove
+                        </button>
+                      </form>
+                    )}
                   </article>
                 );
               })}
