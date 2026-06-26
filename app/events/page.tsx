@@ -1,15 +1,20 @@
 /* eslint-disable @next/next/no-img-element */
 
+import { Role, UserStatus } from "@prisma/client";
 import { auth } from "../../auth";
 import { formatEventListDate } from "../../lib/events";
 import { prisma } from "../../lib/prisma";
+import CreateEventModal from "../create-event-modal";
 import RsvpControl from "./rsvp-control";
 
 export const dynamic = "force-dynamic";
 
-export default async function EventsPage() {
+export default async function EventsPage({
+  searchParams,
+}: Readonly<{ searchParams?: { error?: string } }>) {
   const session = await auth();
   const userId = session?.user?.id;
+  const isAdmin = session?.user?.role === Role.ADMIN && session.user.status === UserStatus.ACTIVE;
   const events = await prisma.event.findMany({
     where: {
       published: true,
@@ -41,6 +46,14 @@ export default async function EventsPage() {
           Join community sessions, reading jams, and builder circles. RSVP is open to active ShardUp
           members.
         </p>
+        {isAdmin ? (
+          <>
+            <a className="button" href="#create-event">
+              Add event
+            </a>
+            <CreateEventModal error={searchParams?.error} returnTo="/events" />
+          </>
+        ) : null}
 
         <div className="event-list">
           {events.length > 0 ? (
@@ -77,6 +90,11 @@ export default async function EventsPage() {
                     <a className="text-link" href={`/events/${event.id}`}>
                       Details
                     </a>
+                    {isAdmin ? (
+                      <a className="text-link" href={`/admin/events/${event.id}`}>
+                        Edit
+                      </a>
+                    ) : null}
                   </div>
                 </article>
               );
