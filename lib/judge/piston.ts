@@ -1,5 +1,6 @@
 import { SUPPORTED_LANGUAGES } from "./languages";
 import type { CodeExecutor, ExecutionResult } from "./types";
+import { injectTimingLogic, cleanStdout } from "./timer";
 
 const OUTPUT_LIMIT = 2_000_000;
 const COMPILE_TIMEOUT_MS = 10_000;
@@ -31,7 +32,9 @@ export const executeWithPiston: CodeExecutor = async ({ code, language, stdin, t
     throw new Error("JUDGE_BASE_URL must point to a self-hosted Piston API.");
   }
 
-  const startedAt = Date.now();
+  // Inject an in-program timer so we report real execution time, not wall clock.
+  code = injectTimingLogic(code, language);
+
   const controller = new AbortController();
   const abortTimer = setTimeout(() => controller.abort(), COMPILE_TIMEOUT_MS + timeLimitMs + 2_000);
 
@@ -42,6 +45,10 @@ export const executeWithPiston: CodeExecutor = async ({ code, language, stdin, t
       headers.authorization = `Bearer ${process.env.JUDGE_API_KEY}`;
     }
 
+    // begin execution engine timer
+    const pistonStartTime = Date.now();
+
+    // pass user input to piston for execution and output
     const response = await fetch(`${baseUrl.replace(/\/$/, "")}/execute`, {
       method: "POST",
       headers,
@@ -70,28 +77,41 @@ export const executeWithPiston: CodeExecutor = async ({ code, language, stdin, t
 
     const compileTimedOut = isPistonTimeout(compile);
 
+    // Handle compilation fails NOT through time-outs
     if (compile && !compileTimedOut && compile.code !== 0) {
       return {
         stdout: "",
         stderr: compileOutput.slice(0, OUTPUT_LIMIT),
         exitCode: compile.code ?? null,
         signal: compile.signal ?? null,
-        runtimeMs: Date.now() - startedAt,
+        runtimeMs: Date.now() - pistonStartTime,
         compileError: compileOutput.slice(0, OUTPUT_LIMIT) || "Compilation failed.",
       } satisfies ExecutionResult;
     }
 
     const runTimedOut = isPistonTimeout(run);
+    const runtimeWithCompilation = Date.now() - pistonStartTime;
+
+    if (runTimedOut) {
+      return {
+        stdout: (run?.stdout ?? "").slice(0, OUTPUT_LIMIT),
+        stderr: "Time limit exceeded.",
+        exitCode: typeof run?.code === "number" ? run.code : null,
+        signal: run?.signal ?? null,
+        runtimeMs: timeLimitMs,
+        timedOut: true,
+      } satisfies ExecutionResult;
+    }
+
+    // Strip the injected timer marker and recover the real execution time.
+    const { runtimeMs, finalStdout } = cleanStdout(run?.stdout ?? "", runtimeWithCompilation);
 
     return {
-      stdout: (run?.stdout ?? "").slice(0, OUTPUT_LIMIT),
-      stderr: runTimedOut
-        ? "Time limit exceeded."
-        : (run?.stderr ?? run?.output ?? "").slice(0, OUTPUT_LIMIT),
+      stdout: finalStdout.slice(0, OUTPUT_LIMIT),
+      stderr: (run?.stderr ?? run?.output ?? "").slice(0, OUTPUT_LIMIT),
       exitCode: typeof run?.code === "number" ? run.code : null,
       signal: run?.signal ?? null,
-      runtimeMs: runTimedOut ? timeLimitMs : Date.now() - startedAt,
-      timedOut: runTimedOut,
+      runtimeMs,
     } satisfies ExecutionResult;
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
