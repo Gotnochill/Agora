@@ -5,7 +5,14 @@ import { isSupportedLanguage, runJudge } from "../../../../lib/judge";
 import { prisma } from "../../../../lib/prisma";
 
 type RunResult =
-  | { ok: true; verdict: string; passedCount: number; totalCount: number; runtimeMs: number | null }
+  | {
+      ok: true;
+      verdict: string;
+      passedCount: number;
+      totalCount: number;
+      runtimeMs: number | null;
+      failureMessage?: string | null;
+    }
   | { ok: false; message: string };
 
 function judgeFailureMessage(error: unknown) {

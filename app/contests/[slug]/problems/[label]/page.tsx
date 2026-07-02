@@ -10,7 +10,7 @@ import {
 } from "../../../../../lib/contest";
 import { supportedLanguageOptions } from "../../../../../lib/judge";
 import { prisma } from "../../../../../lib/prisma";
-import { submitContestSolution } from "../../actions";
+import { runContestPreview, submitContestSolution } from "../../actions";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -32,7 +32,7 @@ export default async function ContestProblemPage({
   searchParams,
 }: Readonly<{
   params: { slug: string; label: string };
-  searchParams?: { error?: string };
+  searchParams?: { error?: string; preview?: string };
 }>) {
   const session = await auth();
   const contest = await prisma.contest.findFirst({
@@ -56,17 +56,24 @@ export default async function ContestProblemPage({
     redirect("/join");
   }
 
+  const isAdmin = session.user.role === "ADMIN";
+  const previewMode = isAdmin && searchParams?.preview === "1";
+
   const registration = await prisma.contestRegistration.findUnique({
     where: { contestId_userId: { contestId: contest.id, userId: session.user.id } },
     select: { id: true, createdAt: true },
   });
 
-  if (!registration) {
-    redirect(`/contests/${contest.slug}?error=register`);
-  }
+  // Admins in preview mode can inspect a contest problem outside the live window
+  // without registering; everyone else must have started the contest.
+  if (!previewMode) {
+    if (!registration) {
+      redirect(`/contests/${contest.slug}?error=register`);
+    }
 
-  if (!isContestLive(contest, new Date(), registration.createdAt)) {
-    redirect(`/contests/${contest.slug}`);
+    if (!isContestLive(contest, new Date(), registration.createdAt)) {
+      redirect(`/contests/${contest.slug}`);
+    }
   }
 
   const contestProblem = await prisma.contestProblem.findFirst({
@@ -106,7 +113,31 @@ export default async function ContestProblemPage({
     },
   });
 
-  const window = contestWindowForUser(contest, registration.createdAt);
+  const previewData = previewMode
+    ? await prisma.problem.findUnique({
+        where: { id: contestProblem.problemId },
+        select: {
+          solutionCode: true,
+          solutionLanguage: true,
+          referenceSolutions: {
+            orderBy: { language: "asc" },
+            select: { language: true, code: true },
+          },
+          _count: { select: { testCases: true } },
+        },
+      })
+    : null;
+  const initialCodeByLanguage: Record<string, string> = {};
+  if (previewData) {
+    for (const reference of previewData.referenceSolutions) {
+      initialCodeByLanguage[reference.language] = reference.code;
+    }
+    if (previewData.referenceSolutions.length === 0 && previewData.solutionCode) {
+      initialCodeByLanguage[previewData.solutionLanguage ?? "python"] = previewData.solutionCode;
+    }
+  }
+
+  const window = registration ? contestWindowForUser(contest, registration.createdAt) : null;
 
   return (
     <main className="app-shell wide-card workspace-shell">
@@ -138,21 +169,47 @@ export default async function ContestProblemPage({
 
         <div className="practice-contest-meta">
           <a href={`/contests/${contest.slug}`}>{contest.title}</a>
-          <span>{contestPhase(contest, new Date(), registration.createdAt)}</span>
-          <span>Your window: {formatContestWindow(window.startsAt, window.endsAt)}</span>
+          <span>
+            {contestPhase(contest, new Date(), registration?.createdAt)}
+            {previewMode ? " · admin preview" : ""}
+          </span>
+          {window ? (
+            <span>Your window: {formatContestWindow(window.startsAt, window.endsAt)}</span>
+          ) : null}
         </div>
+
+        {previewMode ? (
+          <div className="form-message">
+            Admin preview — this is the exact workspace participants see, preloaded with the stored
+            reference solution. Hitting run executes against all{" "}
+            {previewData?._count.testCases ?? 0} test cases (samples, hidden, and efficiency) via
+            the real judge. Runs here are ephemeral: nothing is stored and standings are unaffected.{" "}
+            <a className="text-link" href={`/admin/problems/${contestProblem.problem.slug}`}>
+              View full reference solutions & test cases
+            </a>
+          </div>
+        ) : null}
 
         <ProblemWorkspace
           statement={contestProblem.problem.statement}
           constraints={contestProblem.problem.constraints}
           samples={contestProblem.problem.testCases}
           languageOptions={supportedLanguageOptions()}
-          submissions={submissions}
-          submitAction={submitContestSolution}
-          hiddenFields={{ contestSlug: contest.slug, problemLabel: contestProblem.label }}
-          draftScope={`contest:${contest.slug}:${contestProblem.label}`}
+          submissions={previewMode ? [] : submissions}
+          submitAction={previewMode ? runContestPreview : submitContestSolution}
+          hiddenFields={
+            previewMode
+              ? { problemSlug: contestProblem.problem.slug }
+              : { contestSlug: contest.slug, problemLabel: contestProblem.label }
+          }
+          draftScope={
+            previewMode
+              ? `contest-preview:${contest.slug}:${contestProblem.label}`
+              : `contest:${contest.slug}:${contestProblem.label}`
+          }
           canSubmit
-          rateLimited={searchParams?.error === "rate-limit"}
+          initialCodeByLanguage={previewMode ? initialCodeByLanguage : undefined}
+          rateLimited={!previewMode && searchParams?.error === "rate-limit"}
           rateLimitMessage="You have reached the daily submission limit."
         />
       </section>
