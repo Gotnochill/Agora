@@ -1,5 +1,11 @@
 import type { Session } from "next-auth";
 import { auth, signOut } from "../auth";
+import {
+  listNotifications,
+  relativeTimeFromNow,
+  unreadNotificationCount,
+} from "../lib/notifications";
+import NotificationBell, { type NotificationItem } from "./notification-bell";
 import SiteHeader from "./site-header";
 
 export default async function AccountBar({
@@ -12,6 +18,19 @@ export default async function AccountBar({
   if (!session?.user) {
     return <SiteHeader />;
   }
+
+  const [unreadCount, notifications] = await Promise.all([
+    unreadNotificationCount(session.user.id),
+    listNotifications(session.user.id, 8),
+  ]);
+  const now = new Date();
+  const notificationItems: NotificationItem[] = notifications.map((notification) => ({
+    id: notification.id,
+    type: notification.type,
+    message: notification.message,
+    link: notification.link,
+    timeLabel: relativeTimeFromNow(notification.createdAt, now),
+  }));
 
   return (
     <SiteHeader>
@@ -32,6 +51,7 @@ export default async function AccountBar({
       >
         <button type="submit">Sign out</button>
       </form>
+      <NotificationBell items={notificationItems} unreadCount={unreadCount} />
     </SiteHeader>
   );
 }

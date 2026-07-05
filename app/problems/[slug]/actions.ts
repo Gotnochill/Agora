@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireActiveUser } from "../../../lib/guards";
 import { isSupportedLanguage, runJudge } from "../../../lib/judge";
+import { memberDisplayName } from "../../../lib/members";
+import { createNotification, practiceSolvedMessage } from "../../../lib/notifications";
 import { syncTopPracticeBadge } from "../../../lib/practice";
 import { prisma } from "../../../lib/prisma";
 
@@ -48,6 +50,7 @@ export async function submitSolution(formData: FormData) {
     select: {
       id: true,
       slug: true,
+      title: true,
       timeLimitMs: true,
       testCases: {
         orderBy: { order: "asc" },
@@ -94,6 +97,36 @@ export async function submitSolution(formData: FormData) {
     });
 
     if (result.verdict === SubmissionVerdict.ACCEPTED) {
+      const priorAccepted = await prisma.submission.count({
+        where: {
+          userId: user.id,
+          problemId: problem.id,
+          verdict: SubmissionVerdict.ACCEPTED,
+          id: { not: submission.id },
+        },
+      });
+
+      if (priorAccepted === 0) {
+        const actor = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: {
+            name: true,
+            email: true,
+            profile: { select: { displayName: true } },
+          },
+        });
+
+        await createNotification({
+          type: "PRACTICE_SOLVED",
+          actorId: user.id,
+          message: practiceSolvedMessage(
+            actor ? memberDisplayName(actor) : "A ShardUp member",
+            problem.title,
+          ),
+          link: `/problems/${problem.slug}`,
+        });
+      }
+
       await syncTopPracticeBadge();
     }
   } catch (error) {
