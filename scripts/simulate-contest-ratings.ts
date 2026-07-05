@@ -96,7 +96,7 @@ function simulatePure() {
   const changes = computeRatingChanges(ratingParticipants);
   const changeByUser = new Map(changes.map((c) => [c.userId, c]));
 
-  console.log("\nRating changes (all start at 1500):");
+  console.log(`\nRating changes (all start at ${DEFAULT_CONTEST_RATING}):`);
   printTable(
     ["Name", "Rank", "Before", "Delta", "After", "Tier"],
     registeredIds.map((userId) => {

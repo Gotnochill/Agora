@@ -67,6 +67,7 @@ enum NotificationType {
   RANK_UP
   BADGE_EARNED
   CONTEST_FINISHED
+  OVERALL_RANK_UP
 }
 
 model User {
@@ -172,7 +173,7 @@ model Profile {
   leetcodeHandle String?
   resumeUrl      String?
   photoUrl       String?
-  contestRating  Int      @default(1500)
+  contestRating  Int      @default(1000)
   nudgesCompleted Int     @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

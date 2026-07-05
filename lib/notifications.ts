@@ -1,5 +1,11 @@
-import { NotificationType } from "@prisma/client";
+import { NotificationType, UserStatus } from "@prisma/client";
 import { RATING_TIER_BADGES, tierForRating } from "./contest";
+import {
+  memberDisplayName,
+  memberTotalXp,
+  overallRankPromotions,
+  type RankedMember,
+} from "./members";
 import { prisma } from "./prisma";
 
 export const NOTIFICATION_FEED_LIMIT = 50;
@@ -14,6 +20,12 @@ export function rankUpMessage(name: string, tierLabel: string) {
 
 export function badgeEarnedMessage(name: string, badgeName: string) {
   return `${name} earned the "${badgeName}" badge.`;
+}
+
+export function overallRankUpMessage(name: string, rank: number) {
+  return rank === 1
+    ? `${name} is now #1 on the overall XP leaderboard.`
+    : `${name} climbed to #${rank} on the overall XP leaderboard.`;
 }
 
 export function relativeTimeFromNow(date: Date, now: Date = new Date()) {
@@ -79,6 +91,46 @@ export async function createNotification(input: CreateNotificationInput) {
   } catch (error) {
     console.error("Failed to create notification", error);
   }
+}
+
+// Snapshot every active member's summed badge XP so we can compare leaderboard
+// positions before and after an XP-changing mutation.
+async function rankedMembersSnapshot(): Promise<RankedMember[]> {
+  const members = await prisma.user.findMany({
+    where: { status: UserStatus.ACTIVE },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      profile: { select: { displayName: true } },
+      memberBadges: { select: { badge: { select: { xp: true } } } },
+    },
+  });
+
+  return members.map((member) => ({
+    id: member.id,
+    name: memberDisplayName(member),
+    xp: memberTotalXp(member.memberBadges),
+  }));
+}
+
+// Run an XP-changing mutation, then broadcast a notification for every member who
+// climbed into (or up within) the top overall-XP positions as a result.
+export async function withOverallRankNotifications<T>(mutate: () => Promise<T>): Promise<T> {
+  const before = await rankedMembersSnapshot();
+  const result = await mutate();
+  const after = await rankedMembersSnapshot();
+
+  for (const promotion of overallRankPromotions(before, after)) {
+    await createNotification({
+      type: "OVERALL_RANK_UP",
+      actorId: promotion.id,
+      message: overallRankUpMessage(promotion.name, promotion.rank),
+      link: `/members/${promotion.id}`,
+    });
+  }
+
+  return result;
 }
 
 // The actor never sees their own achievement; everyone else does.

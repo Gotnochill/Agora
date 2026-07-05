@@ -5,7 +5,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../../lib/guards";
 import { badgeSchema, memberDisplayName, validateProfilePhoto } from "../../../../lib/members";
-import { badgeEarnedMessage, createNotification } from "../../../../lib/notifications";
+import {
+  badgeEarnedMessage,
+  createNotification,
+  withOverallRankNotifications,
+} from "../../../../lib/notifications";
 import { TOP_PRACTICE_BADGE_NAME } from "../../../../lib/practice";
 import { AUTO_ASSIGNED_BADGE_NAMES } from "../../../../lib/contest";
 import { prisma } from "../../../../lib/prisma";
@@ -181,11 +185,13 @@ export async function assignBadge(formData: FormData) {
     select: { id: true },
   });
 
-  await prisma.memberBadge.upsert({
-    where: { userId_badgeId: { userId, badgeId } },
-    update: {},
-    create: { userId, badgeId, awardedById: admin.id },
-  });
+  await withOverallRankNotifications(() =>
+    prisma.memberBadge.upsert({
+      where: { userId_badgeId: { userId, badgeId } },
+      update: {},
+      create: { userId, badgeId, awardedById: admin.id },
+    }),
+  );
 
   if (!existing) {
     await notifyBadgeEarned([userId], badgeId);
@@ -268,13 +274,15 @@ export async function bulkAssignBadge(formData: FormData) {
   const alreadyAwardedIds = new Set(alreadyAwarded.map((row) => row.userId));
   const newlyAwardedIds = userIds.filter((userId) => !alreadyAwardedIds.has(userId));
 
-  await prisma.$transaction(
-    userIds.map((userId) =>
-      prisma.memberBadge.upsert({
-        where: { userId_badgeId: { userId, badgeId } },
-        update: {},
-        create: { userId, badgeId, awardedById: admin.id },
-      }),
+  await withOverallRankNotifications(() =>
+    prisma.$transaction(
+      userIds.map((userId) =>
+        prisma.memberBadge.upsert({
+          where: { userId_badgeId: { userId, badgeId } },
+          update: {},
+          create: { userId, badgeId, awardedById: admin.id },
+        }),
+      ),
     ),
   );
 
@@ -306,7 +314,9 @@ export async function removeMemberBadge(formData: FormData) {
       return;
     }
 
-    await prisma.memberBadge.delete({ where: { id: memberBadgeId } });
+    await withOverallRankNotifications(() =>
+      prisma.memberBadge.delete({ where: { id: memberBadgeId } }),
+    );
   }
 
   revalidatePath("/members");

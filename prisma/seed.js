@@ -611,12 +611,12 @@ async function main() {
     where: { name: TOP_PRACTICE_BADGE_NAME },
     update: {
       description: "Automatically held by the current #1 on the practice leaderboard.",
-      xp: 0,
+      xp: 400,
     },
     create: {
       name: TOP_PRACTICE_BADGE_NAME,
       description: "Automatically held by the current #1 on the practice leaderboard.",
-      xp: 0,
+      xp: 400,
     },
     select: { id: true },
   });
@@ -671,11 +671,11 @@ async function main() {
   }
 
   const contestTierBadges = [
-    { name: "Rough Shard", description: "Contest rating below 1200.", xp: 10 },
-    { name: "Cut Shard", description: "Contest rating 1200-1399.", xp: 25 },
-    { name: "Polished Shard", description: "Contest rating 1400-1599.", xp: 50 },
-    { name: "Radiant Shard", description: "Contest rating 1600-1899.", xp: 100 },
-    { name: "Molten Shard", description: "Contest rating 1900+.", xp: 200 },
+    { name: "Rough Shard", description: "Contest rating below 1100.", xp: 25 },
+    { name: "Cut Shard", description: "Contest rating 1100-1249.", xp: 50 },
+    { name: "Polished Shard", description: "Contest rating 1250-1399.", xp: 100 },
+    { name: "Radiant Shard", description: "Contest rating 1400-1599.", xp: 200 },
+    { name: "Molten Shard", description: "Contest rating 1600+.", xp: 400 },
   ];
 
   for (const badge of contestTierBadges) {
