@@ -22,7 +22,8 @@
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
     "simulate:contest": "npx tsx scripts/simulate-contest-ratings.ts",
-    "simulate:contest:db": "npx tsx scripts/simulate-contest-ratings.ts --db"
+    "simulate:contest:db": "npx tsx scripts/simulate-contest-ratings.ts --db",
+    "backfill:notifications": "npx tsx scripts/backfill-notifications.ts"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

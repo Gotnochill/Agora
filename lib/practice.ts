@@ -1,6 +1,7 @@
 import { ProblemDifficulty, SubmissionVerdict } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { memberDisplayName } from "./members";
+import { badgeEarnedMessage, createNotification } from "./notifications";
 import { prisma } from "./prisma";
 
 export const TOP_PRACTICE_BADGE_NAME = "Practice Champion";
@@ -104,6 +105,7 @@ export async function syncTopPracticeBadge() {
   }
 
   const changedUserIds = new Set([...badge.members.map((member) => member.userId), leader.userId]);
+  const leaderAlreadyHeldBadge = badge.members.some((member) => member.userId === leader.userId);
 
   await prisma.$transaction([
     prisma.memberBadge.deleteMany({ where: { badgeId: badge.id, userId: { not: leader.userId } } }),
@@ -113,6 +115,15 @@ export async function syncTopPracticeBadge() {
       create: { badgeId: badge.id, userId: leader.userId },
     }),
   ]);
+
+  if (!leaderAlreadyHeldBadge) {
+    await createNotification({
+      type: "BADGE_EARNED",
+      actorId: leader.userId,
+      message: badgeEarnedMessage(leader.name, TOP_PRACTICE_BADGE_NAME),
+      link: `/members/${leader.userId}`,
+    });
+  }
 
   revalidatePath("/members");
   revalidatePath(`/badges/${badge.id}`);

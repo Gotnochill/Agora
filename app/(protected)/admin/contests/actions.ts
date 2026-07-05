@@ -9,8 +9,16 @@ import {
   contestSchema,
   parseContestDate,
   syncContestRatingBadges,
+  tierForRating,
 } from "../../../../lib/contest";
 import { requireAdmin } from "../../../../lib/guards";
+import { memberDisplayName } from "../../../../lib/members";
+import {
+  contestFinishedMessage,
+  createNotification,
+  rankUpMessage,
+  shouldNotifyRankUp,
+} from "../../../../lib/notifications";
 import { prisma } from "../../../../lib/prisma";
 
 function safeReturnPath(value: FormDataEntryValue | null) {
@@ -150,6 +158,7 @@ export async function finalizeContest(formData: FormData) {
     select: {
       id: true,
       slug: true,
+      title: true,
       status: true,
       startsAt: true,
       endsAt: true,
@@ -235,6 +244,46 @@ export async function finalizeContest(formData: FormData) {
   for (const change of ratingChanges) {
     await syncContestRatingBadges(change.userId, change.newRating);
   }
+
+  const participants = await prisma.user.findMany({
+    where: { id: { in: Array.from(participantIds) } },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      profile: { select: { displayName: true } },
+    },
+  });
+  const nameByUser = new Map(participants.map((participant) => [participant.id, participant]));
+
+  for (const change of ratingChanges) {
+    const ratingBefore = ratingByUser.get(change.userId) ?? 1500;
+
+    if (!shouldNotifyRankUp(ratingBefore, change.newRating)) {
+      continue;
+    }
+
+    const actor = nameByUser.get(change.userId);
+
+    await createNotification({
+      type: "RANK_UP",
+      actorId: change.userId,
+      message: rankUpMessage(
+        actor ? memberDisplayName(actor) : "A ShardUp member",
+        tierForRating(change.newRating).label,
+      ),
+      link: `/members/${change.userId}`,
+    });
+  }
+
+  const winnerId = standings.find((standing) => standing.rank === 1)?.userId;
+  const winner = winnerId ? nameByUser.get(winnerId) : undefined;
+
+  await createNotification({
+    type: "CONTEST_FINISHED",
+    message: contestFinishedMessage(contest.title, winner ? memberDisplayName(winner) : null),
+    link: `/contests/${contest.slug}`,
+  });
 
   revalidatePath("/contests");
   revalidatePath(`/contests/${contest.slug}`);

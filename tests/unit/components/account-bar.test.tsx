@@ -7,6 +7,16 @@ vi.mock("../../../auth", () => ({
   signOut: vi.fn(),
 }));
 
+vi.mock("../../../lib/notifications", () => ({
+  unreadNotificationCount: vi.fn(async () => 0),
+  listNotifications: vi.fn(async () => []),
+  relativeTimeFromNow: vi.fn(() => "just now"),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
+}));
+
 import AccountBar from "../../../app/account-bar";
 
 function makeSession(role: "ADMIN" | "MEMBER"): Session {
