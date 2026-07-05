@@ -65,16 +65,14 @@ export default async function MemberProfilePage({
     take: 20,
     include: { contest: { select: { title: true, slug: true } } },
   });
-  const ratingChartPoints = [...contestHistory]
-    .reverse()
-    .map((entry) => ({
-      rating: entry.ratingAfter,
-      title: entry.contest.title,
-      slug: entry.contest.slug,
-      rank: entry.rank,
-      delta: entry.ratingDelta,
-      date: entry.createdAt.toISOString(),
-    }));
+  const ratingChartPoints = [...contestHistory].reverse().map((entry) => ({
+    rating: entry.ratingAfter,
+    title: entry.contest.title,
+    slug: entry.contest.slug,
+    rank: entry.rank,
+    delta: entry.ratingDelta,
+    date: entry.createdAt.toISOString(),
+  }));
 
   return (
     <main className="app-shell member-profile-page workspace-shell">

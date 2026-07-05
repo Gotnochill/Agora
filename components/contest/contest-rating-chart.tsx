@@ -54,7 +54,9 @@ export default function ContestRatingChart({ points }: Props) {
       y: yFor(point.rating),
     }));
 
-    const line = coords.map((coord, index) => `${index === 0 ? "M" : "L"} ${coord.x} ${coord.y}`).join(" ");
+    const line = coords
+      .map((coord, index) => `${index === 0 ? "M" : "L"} ${coord.x} ${coord.y}`)
+      .join(" ");
     const area =
       coords.length > 0
         ? `${line} L ${coords[coords.length - 1].x} ${PADDING.top + innerHeight} L ${coords[0].x} ${PADDING.top + innerHeight} Z`
