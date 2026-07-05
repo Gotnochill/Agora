@@ -241,6 +241,12 @@ export async function finalizeContest(formData: FormData) {
       where: { id: contestId },
       data: { status: ContestStatus.FINALIZED },
     });
+
+    // Release the contest's problems to the Practice tab now that it is over.
+    await tx.problem.updateMany({
+      where: { contestProblems: { some: { contestId } } },
+      data: { published: true },
+    });
   });
 
   await withOverallRankNotifications(async () => {
@@ -294,4 +300,5 @@ export async function finalizeContest(formData: FormData) {
   revalidatePath("/admin/contests");
   revalidatePath(`/admin/contests/${contestId}`);
   revalidatePath("/members");
+  revalidatePath("/problems");
 }

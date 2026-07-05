@@ -73,6 +73,12 @@ export default async function AdminContestDetailPage({
               </button>
             </form>
           ) : null}
+          {canFinalize ? (
+            <p className="nudge-meta">
+              Finalizing computes ratings and releases this contest&apos;s problems to the Practice
+              tab.
+            </p>
+          ) : null}
           {contest.status !== ContestStatus.DRAFT ? (
             <a className="text-link" href={`/contests/${contest.slug}`}>
               View public page
