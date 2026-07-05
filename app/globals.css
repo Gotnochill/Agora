@@ -119,6 +119,96 @@
   color: var(--tier-molten);
 }
 
+/* Contest rating chart */
+.contest-rating-chart {
+  position: relative;
+  width: 100%;
+  margin: 4px 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  padding: 8px;
+}
+
+.contest-rating-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.contest-rating-chart__grid line {
+  stroke: var(--line);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+
+.contest-rating-chart__grid text {
+  fill: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.contest-rating-chart__line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.contest-rating-chart__dot {
+  fill: var(--paper);
+  stroke: var(--accent);
+  stroke-width: 2;
+  transition:
+    r 120ms ease,
+    fill 120ms ease;
+}
+
+.contest-rating-chart__dot.is-active {
+  fill: var(--accent);
+}
+
+.contest-rating-chart__hit {
+  fill: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.contest-rating-chart__marker {
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.6;
+}
+
+.contest-rating-chart__tooltip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 12px));
+  min-width: 128px;
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 12px;
+  line-height: 1.35;
+  pointer-events: none;
+  box-shadow: 0 8px 20px rgb(5 7 11 / 25%);
+  z-index: 2;
+}
+
+.contest-rating-chart__tooltip strong {
+  font-size: 12px;
+}
+
+.contest-rating-chart__tooltip-date {
+  color: var(--muted);
+}
+
 * {
   box-sizing: border-box;
 }

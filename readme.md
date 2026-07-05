@@ -188,7 +188,8 @@ ShardUp runs community coding contests on a roughly biweekly cadence. Admins cre
 
 - Members register on `/contests` and solve problems during the live window.
 - Standings use LeetCode-style scoring (solved count, then time taken plus a 5-minute penalty per wrong submission on solved problems).
-- Finalize recomputes Codeforces-style contest ratings (default 1500) and auto-assigns rating-tier badges on member profiles.
+- Finalize recomputes Codeforces-style contest ratings (everyone starts at 1000, the bottom "Rough" tier, and climbs) and auto-assigns rating-tier badges on member profiles.
+- Finalizing a contest also publishes its problems to the Practice tab, so every contest question becomes practice material once the contest is over.
 
 After deploying contest schema changes, run `npm run prisma:migrate` against your database before publishing a contest.
 

@@ -10,6 +10,7 @@ import { memberDisplayName, memberInitials, medalsForMembers } from "../../../li
 import { prisma } from "../../../lib/prisma";
 import { assignBadge, removeMemberBadge } from "../../(protected)/admin/badges/actions";
 import NudgesInbox from "../../nudges/nudges-inbox";
+import ContestRatingChart from "../../../components/contest/contest-rating-chart";
 
 export const dynamic = "force-dynamic";
 
@@ -61,9 +62,17 @@ export default async function MemberProfilePage({
   const contestHistory = await prisma.contestParticipant.findMany({
     where: { userId: member.id },
     orderBy: { createdAt: "desc" },
-    take: 5,
+    take: 20,
     include: { contest: { select: { title: true, slug: true } } },
   });
+  const ratingChartPoints = [...contestHistory].reverse().map((entry) => ({
+    rating: entry.ratingAfter,
+    title: entry.contest.title,
+    slug: entry.contest.slug,
+    rank: entry.rank,
+    delta: entry.ratingDelta,
+    date: entry.createdAt.toISOString(),
+  }));
 
   return (
     <main className="app-shell member-profile-page workspace-shell">
@@ -162,15 +171,7 @@ export default async function MemberProfilePage({
                     {contestTier.label}
                   </span>
                 </p>
-                <div className="member-link-list">
-                  {contestHistory.map((entry) => (
-                    <span key={entry.id}>
-                      <a href={`/contests/${entry.contest.slug}`}>{entry.contest.title}</a> · #
-                      {entry.rank} · {entry.ratingDelta >= 0 ? "+" : ""}
-                      {entry.ratingDelta}
-                    </span>
-                  ))}
-                </div>
+                <ContestRatingChart points={ratingChartPoints} />
               </>
             ) : (
               <p>No finalized contests yet.</p>
