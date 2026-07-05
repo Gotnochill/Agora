@@ -47,16 +47,55 @@ export function memberTotalXp(memberBadges: { badge: { xp: number } }[]) {
   return memberBadges.reduce((total, memberBadge) => total + memberBadge.badge.xp, 0);
 }
 
-// Global gold/silver/bronze for the top 3 members by XP (XP > 0 only), ties broken by name.
-export function assignMedals(
-  members: { id: string; name: string; xp: number }[],
-): Map<string, Medal> {
-  const medals: Medal[] = ["gold", "silver", "bronze"];
-  const ranked = members
+// How many top overall-XP positions earn a medal and a rank-up notification.
+export const OVERALL_RANK_TOP_N = 3;
+
+export type RankedMember = { id: string; name: string; xp: number };
+
+// Members with XP ordered best-first, ties broken by name — the single source of
+// truth for both medals and overall-rank notifications.
+export function rankMembersByXp(members: RankedMember[]): RankedMember[] {
+  return members
     .filter((member) => member.xp > 0)
     .sort((a, b) => b.xp - a.xp || a.name.localeCompare(b.name));
+}
 
-  return new Map(ranked.slice(0, 3).map((member, index) => [member.id, medals[index]]));
+// Map of userId -> 1-based overall rank (only members with XP appear).
+export function overallRankMap(members: RankedMember[]): Map<string, number> {
+  return new Map(rankMembersByXp(members).map((member, index) => [member.id, index + 1]));
+}
+
+export type OverallRankPromotion = { id: string; name: string; rank: number };
+
+// Members who climbed into (or up within) the top N overall between two snapshots.
+// A member counts as promoted when they were previously outside the top N (or had
+// no XP) or now hold a strictly better position than before. Drops never notify.
+export function overallRankPromotions(
+  before: RankedMember[],
+  after: RankedMember[],
+  topN = OVERALL_RANK_TOP_N,
+): OverallRankPromotion[] {
+  const beforeRank = overallRankMap(before);
+
+  return rankMembersByXp(after)
+    .slice(0, topN)
+    .map((member, index) => ({ member, rank: index + 1 }))
+    .filter(({ member, rank }) => {
+      const previousRank = beforeRank.get(member.id);
+      return previousRank === undefined || rank < previousRank;
+    })
+    .map(({ member, rank }) => ({ id: member.id, name: member.name, rank }));
+}
+
+// Global gold/silver/bronze for the top 3 members by XP (XP > 0 only), ties broken by name.
+export function assignMedals(members: RankedMember[]): Map<string, Medal> {
+  const medals: Medal[] = ["gold", "silver", "bronze"];
+
+  return new Map(
+    rankMembersByXp(members)
+      .slice(0, 3)
+      .map((member, index) => [member.id, medals[index]]),
+  );
 }
 
 type MedalCandidate = {

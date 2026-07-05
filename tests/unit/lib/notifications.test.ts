@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   badgeEarnedMessage,
   contestFinishedMessage,
+  overallRankUpMessage,
   practiceSolvedMessage,
   rankUpMessage,
   relativeTimeFromNow,
@@ -23,21 +24,29 @@ describe("notification message builders", () => {
   it("omits the winner clause when there is none", () => {
     expect(contestFinishedMessage("Weekly 1", null)).toBe('Contest "Weekly 1" wrapped up.');
   });
+
+  it("phrases overall rank-ups by position", () => {
+    expect(overallRankUpMessage("Ada", 1)).toBe("Ada is now #1 on the overall XP leaderboard.");
+    expect(overallRankUpMessage("Bo", 2)).toBe("Bo climbed to #2 on the overall XP leaderboard.");
+    expect(overallRankUpMessage("Cy", 3)).toBe("Cy climbed to #3 on the overall XP leaderboard.");
+  });
 });
 
 describe("shouldNotifyRankUp", () => {
   it("stays quiet within the same tier", () => {
-    expect(shouldNotifyRankUp(1200, 1300)).toBe(false);
+    // 1000 and 1050 are both Rough (0-1099).
+    expect(shouldNotifyRankUp(1000, 1050)).toBe(false);
   });
 
   it("fires when crossing into a higher tier", () => {
-    // 1199 -> Rough, 1200 -> Cut
-    expect(shouldNotifyRankUp(1199, 1200)).toBe(true);
-    // 1399 -> Cut, 1400 -> Polished
+    // 1099 -> Rough, 1100 -> Cut
+    expect(shouldNotifyRankUp(1099, 1100)).toBe(true);
+    // 1399 -> Polished, 1400 -> Radiant
     expect(shouldNotifyRankUp(1399, 1400)).toBe(true);
   });
 
   it("does not fire on a demotion", () => {
+    // 1450 -> Radiant, 1300 -> Polished
     expect(shouldNotifyRankUp(1450, 1300)).toBe(false);
   });
 });

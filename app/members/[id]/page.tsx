@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { auth } from "../../../auth";
 import CreateBadgeModal from "../../create-badge-modal";
 import SendNudgeModal from "../../send-nudge-modal";
-import { tierForRating } from "../../../lib/contest";
+import { DEFAULT_CONTEST_RATING, tierForRating } from "../../../lib/contest";
 import { memberDisplayName, memberInitials, medalsForMembers } from "../../../lib/members";
 import { prisma } from "../../../lib/prisma";
 import { assignBadge, removeMemberBadge } from "../../(protected)/admin/badges/actions";
@@ -56,7 +56,7 @@ export default async function MemberProfilePage({
   const badges = isAdmin ? await prisma.badge.findMany({ orderBy: { name: "asc" } }) : [];
   const assignedBadgeIds = new Set(member.memberBadges.map((memberBadge) => memberBadge.badgeId));
   const availableBadges = badges.filter((badge) => !assignedBadgeIds.has(badge.id));
-  const contestRating = member.profile?.contestRating ?? 1500;
+  const contestRating = member.profile?.contestRating ?? DEFAULT_CONTEST_RATING;
   const contestTier = tierForRating(contestRating);
   const contestHistory = await prisma.contestParticipant.findMany({
     where: { userId: member.id },

@@ -7,6 +7,7 @@ import {
   computeRatingChanges,
   computeStandings,
   contestSchema,
+  DEFAULT_CONTEST_RATING,
   parseContestDate,
   syncContestRatingBadges,
   tierForRating,
@@ -18,6 +19,7 @@ import {
   createNotification,
   rankUpMessage,
   shouldNotifyRankUp,
+  withOverallRankNotifications,
 } from "../../../../lib/notifications";
 import { prisma } from "../../../../lib/prisma";
 
@@ -202,7 +204,7 @@ export async function finalizeContest(formData: FormData) {
   const ratingParticipants = Array.from(participantIds).map((userId) => ({
     userId,
     rank: standingByUser.get(userId)?.rank ?? participantIds.size,
-    rating: ratingByUser.get(userId) ?? 1500,
+    rating: ratingByUser.get(userId) ?? DEFAULT_CONTEST_RATING,
   }));
   const ratingChanges = computeRatingChanges(ratingParticipants);
   const changeByUser = new Map(ratingChanges.map((change) => [change.userId, change]));
@@ -213,7 +215,7 @@ export async function finalizeContest(formData: FormData) {
     for (const userId of Array.from(participantIds)) {
       const standing = standingByUser.get(userId);
       const change = changeByUser.get(userId)!;
-      const ratingBefore = ratingByUser.get(userId) ?? 1500;
+      const ratingBefore = ratingByUser.get(userId) ?? DEFAULT_CONTEST_RATING;
 
       await tx.contestParticipant.create({
         data: {
@@ -241,9 +243,11 @@ export async function finalizeContest(formData: FormData) {
     });
   });
 
-  for (const change of ratingChanges) {
-    await syncContestRatingBadges(change.userId, change.newRating);
-  }
+  await withOverallRankNotifications(async () => {
+    for (const change of ratingChanges) {
+      await syncContestRatingBadges(change.userId, change.newRating);
+    }
+  });
 
   const participants = await prisma.user.findMany({
     where: { id: { in: Array.from(participantIds) } },
@@ -257,7 +261,7 @@ export async function finalizeContest(formData: FormData) {
   const nameByUser = new Map(participants.map((participant) => [participant.id, participant]));
 
   for (const change of ratingChanges) {
-    const ratingBefore = ratingByUser.get(change.userId) ?? 1500;
+    const ratingBefore = ratingByUser.get(change.userId) ?? DEFAULT_CONTEST_RATING;
 
     if (!shouldNotifyRankUp(ratingBefore, change.newRating)) {
       continue;

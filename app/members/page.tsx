@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { UserStatus } from "@prisma/client";
-import { tierForRating } from "../../lib/contest";
+import { DEFAULT_CONTEST_RATING, tierForRating } from "../../lib/contest";
 import {
   medalsForMembers,
   memberDisplayName,
@@ -65,7 +65,7 @@ export default async function MembersPage() {
                   const name = memberDisplayName(member);
                   const medal = medals.get(member.id);
                   const avatarClass = medal ? `member-avatar medal-${medal}` : "member-avatar";
-                  const rating = member.profile?.contestRating ?? 1500;
+                  const rating = member.profile?.contestRating ?? DEFAULT_CONTEST_RATING;
                   const tier = tierForRating(rating);
                   const hasContestHistory = member._count.contestParticipations > 0;
 

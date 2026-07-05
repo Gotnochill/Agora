@@ -4,7 +4,7 @@ import { z } from "zod";
 import { memberDisplayName } from "./members";
 import { prisma } from "./prisma";
 
-export const DEFAULT_CONTEST_RATING = 1500;
+export const DEFAULT_CONTEST_RATING = 1000;
 // LeetCode-style: each wrong submission on a solved problem adds 5 minutes.
 export const CONTEST_WRONG_PENALTY_MINUTES = 5;
 
@@ -15,38 +15,38 @@ export const RATING_TIER_BADGES = [
     slug: "rough",
     color: "#6b7280",
     minRating: 0,
-    maxRating: 1199,
+    maxRating: 1099,
   },
   {
     name: "Cut Shard",
     label: "Cut",
     slug: "cut",
     color: "#2f9e44",
-    minRating: 1200,
-    maxRating: 1399,
+    minRating: 1100,
+    maxRating: 1249,
   },
   {
     name: "Polished Shard",
     label: "Polished",
     slug: "polished",
     color: "#1971c2",
-    minRating: 1400,
-    maxRating: 1599,
+    minRating: 1250,
+    maxRating: 1399,
   },
   {
     name: "Radiant Shard",
     label: "Radiant",
     slug: "radiant",
     color: "#7048e8",
-    minRating: 1600,
-    maxRating: 1899,
+    minRating: 1400,
+    maxRating: 1599,
   },
   {
     name: "Molten Shard",
     label: "Molten",
     slug: "molten",
     color: "#e8590c",
-    minRating: 1900,
+    minRating: 1600,
     maxRating: Number.POSITIVE_INFINITY,
   },
 ] as const;
@@ -256,7 +256,7 @@ export function computeRatingChanges(participants: RatingParticipant[]): RatingC
     return [{ userId: only.userId, delta: 0, newRating: only.rating }];
   }
 
-  const K = 32;
+  const K = 64;
 
   const changes = participants.map((participant) => {
     let expected = 0;
@@ -288,11 +288,18 @@ export function computeRatingChanges(participants: RatingParticipant[]): RatingC
   const totalDelta = changes.reduce((sum, change) => sum + change.delta, 0);
   const adjust = -Math.round(totalDelta / participants.length);
 
-  return changes.map((change) => ({
-    ...change,
-    delta: change.delta + adjust,
-    newRating: change.newRating + adjust,
-  }));
+  return changes.map((change) => {
+    // Ratings never drop below 0 (the floor of the Rough tier). Recompute the
+    // delta from the clamped rating so it stays consistent with newRating.
+    const baseRating = change.newRating - change.delta;
+    const newRating = Math.max(0, change.newRating + adjust);
+
+    return {
+      userId: change.userId,
+      delta: newRating - baseRating,
+      newRating,
+    };
+  });
 }
 
 type ContestUser = {

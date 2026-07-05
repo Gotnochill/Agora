@@ -9,13 +9,18 @@
  *   - one PRACTICE_SOLVED per member's first accepted solve of a problem
  *   - one BADGE_EARNED per badge a member holds
  *   - a summary highlighting the practice-leaderboard champion
- *   - a summary highlighting the top overall member by total XP
+ *   - a summary highlighting the top overall members (top 3) by total XP
  *
  * Run (local):  DATABASE_URL=... npx tsx scripts/backfill-notifications.ts
  * Run (prod):   DATABASE_URL="<neon url>" npx tsx scripts/backfill-notifications.ts
  */
 import { NotificationType, ProblemDifficulty, SubmissionVerdict, UserStatus } from "@prisma/client";
-import { memberDisplayName, memberTotalXp } from "../lib/members";
+import {
+  memberDisplayName,
+  memberTotalXp,
+  OVERALL_RANK_TOP_N,
+  rankMembersByXp,
+} from "../lib/members";
 import { badgeEarnedMessage, practiceSolvedMessage } from "../lib/notifications";
 import { rankPracticeUsers, TOP_PRACTICE_BADGE_NAME } from "../lib/practice";
 import { prisma } from "../lib/prisma";
@@ -149,25 +154,25 @@ async function main() {
     });
   }
 
-  const topByXp = users
-    .filter((user) => user.status === UserStatus.ACTIVE)
-    .map((user) => ({
-      userId: user.id,
-      name: memberDisplayName(user),
-      xp: memberTotalXp(user.memberBadges),
-    }))
-    .filter((entry) => entry.xp > 0)
-    .sort((a, b) => b.xp - a.xp || a.name.localeCompare(b.name))[0];
+  const topByXp = rankMembersByXp(
+    users
+      .filter((user) => user.status === UserStatus.ACTIVE)
+      .map((user) => ({
+        id: user.id,
+        name: memberDisplayName(user),
+        xp: memberTotalXp(user.memberBadges),
+      })),
+  ).slice(0, OVERALL_RANK_TOP_N);
 
-  if (topByXp) {
+  topByXp.forEach((entry, index) => {
     seeds.push({
-      type: NotificationType.RANK_UP,
-      actorId: topByXp.userId,
-      message: `${topByXp.name} is ranked #1 overall with a total XP of ${topByXp.xp}.`,
-      link: `/members/${topByXp.userId}`,
+      type: NotificationType.OVERALL_RANK_UP,
+      actorId: entry.id,
+      message: `${entry.name} is ranked #${index + 1} overall with a total XP of ${entry.xp}.`,
+      link: `/members/${entry.id}`,
       createdAt: now,
     });
-  }
+  });
 
   const deleted = await prisma.notification.deleteMany({});
   const created = seeds.length
@@ -179,7 +184,7 @@ async function main() {
     `Created ${created.count} notification(s): ` +
       `${seeds.filter((s) => s.type === NotificationType.PRACTICE_SOLVED).length} solves, ` +
       `${seeds.filter((s) => s.type === NotificationType.BADGE_EARNED).length} badges, ` +
-      `${seeds.filter((s) => s.type === NotificationType.RANK_UP).length} rank summaries.`,
+      `${seeds.filter((s) => s.type === NotificationType.OVERALL_RANK_UP).length} rank summaries.`,
   );
 }
 

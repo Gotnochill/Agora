@@ -23,7 +23,10 @@ function safeReturnPath(value: FormDataEntryValue | null) {
 }
 
 function successPath(path: string) {
-  return `${path}${path.includes("?") ? "&" : "?"}created=event`;
+  // The trailing fragment clears any lingering #create-event target so the
+  // CSS :target modal closes. Without an explicit fragment, browsers reuse the
+  // original request fragment on redirects and the modal would stay open.
+  return `${path}${path.includes("?") ? "&" : "?"}created=event#event-created`;
 }
 
 function validateEventImage(file: File, imageErrorPath: string, storageErrorPath: string) {

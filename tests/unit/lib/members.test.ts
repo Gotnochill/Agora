@@ -6,6 +6,7 @@ import {
   memberDisplayName,
   memberInitials,
   memberTotalXp,
+  overallRankPromotions,
   parseSkills,
   profileSchema,
   validateProfilePhoto,
@@ -88,5 +89,64 @@ describe("member helpers", () => {
 
     expect(medals.size).toBe(1);
     expect(medals.get("a")).toBe("gold");
+  });
+});
+
+describe("overallRankPromotions", () => {
+  it("notifies a new entrant to the top 3, including #2 and #3", () => {
+    const before = [
+      { id: "a", name: "Ann", xp: 100 },
+      { id: "b", name: "Bob", xp: 80 },
+    ];
+    // Cy jumps in at #2, pushing Bob to #3.
+    const after = [
+      { id: "a", name: "Ann", xp: 100 },
+      { id: "c", name: "Cy", xp: 90 },
+      { id: "b", name: "Bob", xp: 80 },
+    ];
+
+    const promotions = overallRankPromotions(before, after);
+
+    expect(promotions).toEqual([{ id: "c", name: "Cy", rank: 2 }]);
+  });
+
+  it("notifies when a member climbs within the top 3", () => {
+    const before = [
+      { id: "a", name: "Ann", xp: 100 },
+      { id: "b", name: "Bob", xp: 80 },
+      { id: "c", name: "Cy", xp: 60 },
+    ];
+    // Cy overtakes Bob for #2.
+    const after = [
+      { id: "a", name: "Ann", xp: 100 },
+      { id: "c", name: "Cy", xp: 90 },
+      { id: "b", name: "Bob", xp: 80 },
+    ];
+
+    expect(overallRankPromotions(before, after)).toEqual([{ id: "c", name: "Cy", rank: 2 }]);
+  });
+
+  it("stays silent when the top 3 is unchanged", () => {
+    const roster = [
+      { id: "a", name: "Ann", xp: 100 },
+      { id: "b", name: "Bob", xp: 80 },
+      { id: "c", name: "Cy", xp: 60 },
+    ];
+
+    expect(overallRankPromotions(roster, roster)).toEqual([]);
+  });
+
+  it("does not notify members who dropped in rank", () => {
+    const before = [
+      { id: "a", name: "Ann", xp: 100 },
+      { id: "b", name: "Bob", xp: 80 },
+    ];
+    // Ann loses XP and falls to #2; Bob rises to #1 (Bob is notified, Ann is not).
+    const after = [
+      { id: "b", name: "Bob", xp: 80 },
+      { id: "a", name: "Ann", xp: 50 },
+    ];
+
+    expect(overallRankPromotions(before, after)).toEqual([{ id: "b", name: "Bob", rank: 1 }]);
   });
 });

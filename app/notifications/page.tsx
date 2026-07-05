@@ -14,6 +14,7 @@ const NOTIFICATION_ICONS: Record<NotificationType, string> = {
   RANK_UP: "⬆️",
   BADGE_EARNED: "🏅",
   CONTEST_FINISHED: "🏆",
+  OVERALL_RANK_UP: "📈",
 };
 
 export default async function NotificationsPage() {
