@@ -20,6 +20,7 @@ type Submission = {
   totalCount: number;
   runtimeMs: number | null;
   failureMessage: string | null;
+  note?: string;
 };
 
 type SampleTest = {
@@ -72,6 +73,7 @@ function SubmissionMeta({ submission }: Readonly<{ submission: Submission }>) {
         {submission.passedCount}/{submission.totalCount} tests
       </span>
       <span>{submission.runtimeMs ?? 0}ms</span>
+      {submission.note ? <span className="submission-note">{submission.note}</span> : null}
     </>
   );
 }
@@ -130,6 +132,7 @@ export function ProblemWorkspace({
   languageOptions,
   submissions,
   submitAction,
+  runAction,
   hiddenFields,
   draftScope,
   canSubmit,
@@ -146,6 +149,9 @@ export function ProblemWorkspace({
   // Returning a run result (instead of void) marks an ephemeral run: it is shown
   // in the submissions list but never persisted. Void triggers a server refresh.
   submitAction: (formData: FormData) => Promise<void | EphemeralRunResult>;
+  // When provided, shows a "Run sample tests" button that judges the code against
+  // the sample tests only and displays an ephemeral, non-persisted result.
+  runAction?: (formData: FormData) => Promise<EphemeralRunResult>;
   hiddenFields: Record<string, string>;
   draftScope: string;
   canSubmit: boolean;
@@ -157,6 +163,7 @@ export function ProblemWorkspace({
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<WorkspaceTab>("description");
   const [isRunning, setIsRunning] = useState(false);
+  const [runningMode, setRunningMode] = useState<"submit" | "run">("submit");
   const [language, setLanguage] = useState("python");
   const [code, setCode] = useState(starterCode.python);
   const [error, setError] = useState<string | null>(null);
@@ -165,6 +172,7 @@ export function ProblemWorkspace({
   const [split, setSplit] = useState(0.5);
 
   const workspaceRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const draggingRef = useRef(false);
 
   // Restore the saved draft for this problem + language (localStorage survives refresh).
@@ -229,21 +237,47 @@ export function ProblemWorkspace({
     localStorage.setItem(draftKey(draftScope, language), value);
   }
 
+  function buildFormData() {
+    if (!formRef.current) {
+      return null;
+    }
+    const submittedCode = code;
+    if (!submittedCode.trim()) {
+      setError("Add a solution before submitting.");
+      return null;
+    }
+    const formData = new FormData(formRef.current);
+    formData.set("code", submittedCode);
+    return formData;
+  }
+
+  function pushEphemeralResult(result: EphemeralRunResult, note?: string) {
+    setEphemeralSubmissions((previous) => [
+      {
+        id: `preview-${Date.now()}`,
+        language,
+        verdict: result.verdict,
+        passedCount: result.passedCount,
+        totalCount: result.totalCount,
+        runtimeMs: result.runtimeMs,
+        failureMessage: result.failureMessage ?? null,
+        note,
+      },
+      ...previous,
+    ]);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const submittedCode = code;
-
-    if (!submittedCode.trim()) {
-      setError("Add a solution before submitting.");
+    const formData = buildFormData();
+    if (!formData) {
       return;
     }
 
-    formData.set("code", submittedCode);
     setError(null);
     setRunningLanguage(language);
+    setRunningMode("submit");
     setIsRunning(true);
     // Jump to the submissions tab so the verdict is visible while it runs.
     setActiveTab("submissions");
@@ -252,21 +286,35 @@ export function ProblemWorkspace({
       const result = await submitAction(formData);
       if (result) {
         // Ephemeral run (admin preview): show the verdict without persisting.
-        setEphemeralSubmissions((previous) => [
-          {
-            id: `preview-${Date.now()}`,
-            language,
-            verdict: result.verdict,
-            passedCount: result.passedCount,
-            totalCount: result.totalCount,
-            runtimeMs: result.runtimeMs,
-            failureMessage: result.failureMessage ?? null,
-          },
-          ...previous,
-        ]);
+        pushEphemeralResult(result);
       } else {
         router.refresh();
       }
+    } finally {
+      setIsRunning(false);
+    }
+  }
+
+  async function handleRun() {
+    if (!runAction) {
+      return;
+    }
+
+    const formData = buildFormData();
+    if (!formData) {
+      return;
+    }
+
+    setError(null);
+    setRunningLanguage(language);
+    setRunningMode("run");
+    setIsRunning(true);
+    // Jump to the submissions tab so the verdict is visible while it runs.
+    setActiveTab("submissions");
+
+    try {
+      const result = await runAction(formData);
+      pushEphemeralResult(result, "Sample run - not saved");
     } finally {
       setIsRunning(false);
     }
@@ -353,7 +401,9 @@ export function ProblemWorkspace({
                   <div className="submission-row">
                     <strong className="verdict-label">Pending</strong>
                     <span>{runningLanguage}</span>
-                    <span>Running tests...</span>
+                    <span>
+                      {runningMode === "run" ? "Running sample tests..." : "Running tests..."}
+                    </span>
                     <span className="submission-spinner" aria-hidden="true" />
                   </div>
                 </article>
@@ -395,7 +445,7 @@ export function ProblemWorkspace({
       <section className="practice-submit-pane" aria-label="Solution editor">
         {rateLimited ? <div className="form-message error">{rateLimitMessage}</div> : null}
         {canSubmit ? (
-          <form className="stacked-form editor-form" onSubmit={handleSubmit}>
+          <form className="stacked-form editor-form" ref={formRef} onSubmit={handleSubmit}>
             {Object.entries(hiddenFields).map(([name, value]) => (
               <input type="hidden" name={name} value={value} key={name} />
             ))}
@@ -440,9 +490,21 @@ export function ProblemWorkspace({
               </div>
             </div>
             {error ? <div className="form-message error">{error}</div> : null}
-            <button className="button" type="submit" disabled={isRunning}>
-              {isRunning ? "Running tests..." : "Submit solution"}
-            </button>
+            <div className="editor-actions">
+              {runAction ? (
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={handleRun}
+                  disabled={isRunning}
+                >
+                  {isRunning && runningMode === "run" ? "Running..." : "Run sample tests"}
+                </button>
+              ) : null}
+              <button className="button" type="submit" disabled={isRunning}>
+                {isRunning && runningMode === "submit" ? "Running tests..." : "Submit solution"}
+              </button>
+            </div>
           </form>
         ) : (
           <SubmissionGate userStatus={userStatus} />

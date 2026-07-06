@@ -188,6 +188,93 @@ export async function submitContestSolution(formData: FormData) {
   revalidatePath(`/contests/${contest.slug}/problems/${parsed.data.problemLabel}`);
 }
 
+// Run a member's code against the sample tests only, without persisting a
+// contest submission. Lets participants catch compile errors and check sample
+// output before committing to a real submission (which incurs a wrong-answer
+// penalty in standings). Gated to the live window like a real submission, and
+// only samples are executed so no hidden/efficiency tests leak.
+export async function runContestSolution(formData: FormData): Promise<ContestPreviewResult> {
+  const user = await requireActiveUser();
+  const parsed = submissionSchema.safeParse({
+    contestSlug: formData.get("contestSlug"),
+    problemLabel: formData.get("problemLabel"),
+    language: formData.get("language"),
+    code: formData.get("code"),
+  });
+
+  if (!parsed.success || !isSupportedLanguage(parsed.data.language)) {
+    return previewError("Unsupported language or invalid request.");
+  }
+  if (parsed.data.code.trim().length === 0) {
+    return previewError("Write some code before running.");
+  }
+
+  const contest = await prisma.contest.findFirst({
+    where: { slug: parsed.data.contestSlug, status: ContestStatus.PUBLISHED },
+    select: {
+      id: true,
+      startsAt: true,
+      endsAt: true,
+      status: true,
+      durationMinutes: true,
+    },
+  });
+
+  if (!contest) {
+    return previewError("This contest is not accepting runs right now.");
+  }
+
+  const registration = await prisma.contestRegistration.findUnique({
+    where: { contestId_userId: { contestId: contest.id, userId: user.id } },
+    select: { createdAt: true },
+  });
+
+  if (!registration) {
+    return previewError("Register for the contest before running code.");
+  }
+
+  if (!isContestLive(contest, new Date(), registration.createdAt)) {
+    return previewError("Your contest window is not live.");
+  }
+
+  const contestProblem = await prisma.contestProblem.findFirst({
+    where: { contestId: contest.id, label: parsed.data.problemLabel },
+    select: {
+      problem: {
+        select: {
+          timeLimitMs: true,
+          testCases: {
+            where: { isSample: true },
+            orderBy: { order: "asc" },
+            select: { input: true, expectedOutput: true, isSample: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (!contestProblem || contestProblem.problem.testCases.length === 0) {
+    return previewError("This problem has no sample tests to run against.");
+  }
+
+  try {
+    return await runJudge({
+      code: parsed.data.code,
+      language: parsed.data.language,
+      testCases: contestProblem.problem.testCases,
+      timeLimitMs: contestProblem.problem.timeLimitMs,
+    });
+  } catch (error) {
+    return {
+      verdict: SubmissionVerdict.RUNTIME_ERROR,
+      passedCount: 0,
+      totalCount: contestProblem.problem.testCases.length,
+      runtimeMs: null,
+      failureMessage: failureMessageFromError(error),
+    };
+  }
+}
+
 function previewError(message: string): ContestPreviewResult {
   return {
     verdict: SubmissionVerdict.RUNTIME_ERROR,
