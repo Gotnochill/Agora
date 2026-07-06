@@ -175,6 +175,120 @@ function buildStressTests() {
   );
   const codecEncoded = codecStrings.map((value) => `${value.length}#${value}`).join("");
 
+  // --- Stack + binary search additions ---------------------------------------
+  // valid-parentheses: 50k opens then 50k closes => deeply nested but valid.
+  const parenDepth = 50_000;
+  const balancedParens = `${"[".repeat(parenDepth)}${"]".repeat(parenDepth)}`;
+
+  // min-stack: push strictly decreasing values (min updates every push), then
+  // query getMin n times. Constant-time getMin must survive 100k operations.
+  const minStackN = 50_000;
+  const minStackPushes = values(minStackN, (index) => `push ${minStackN - index}`).join("\n");
+  const minStackQueries = repeated(minStackN, "getMin").join("\n");
+  const minStackOutput = `${repeated(minStackN, "1").join("\n")}\n`;
+
+  // evaluate-reverse-polish-notation: 1 2 + 3 + 4 + ... + N + => sum 1..N.
+  const rpnN = 50_000;
+  const rpnTokens = [1, 2, "+"];
+  for (let k = 3; k <= rpnN; k += 1) {
+    rpnTokens.push(k, "+");
+  }
+  const rpnSum = (rpnN * (rpnN + 1)) / 2;
+
+  // daily-temperatures: strictly decreasing => no warmer day, stack grows to n.
+  const dailyTempN = 100_000;
+  const dailyTempValues = values(dailyTempN, (index) => dailyTempN - index);
+  const dailyTempOutput = line(repeated(dailyTempN, 0));
+
+  // binary-search: 1..N, search the last element.
+  const binarySearchN = 100_000;
+  const binarySearchValues = range(binarySearchN);
+
+  // search-a-2d-matrix: fully sorted 1000 x 100 matrix, search the last value.
+  const matrixRows = 1_000;
+  const matrixCols = 100;
+  const matrixBody = values(matrixRows, (r) =>
+    values(matrixCols, (c) => r * matrixCols + c + 1).join(" "),
+  ).join("\n");
+  const matrixTarget = matrixRows * matrixCols;
+
+  // koko-eating-bananas: 100k piles of 10^9 with h = n forces speed 10^9.
+  const kokoN = 100_000;
+  const kokoPiles = repeated(kokoN, 1_000_000_000);
+
+  // Rotated arrays: 1..N rotated left by half, minimum 1 lives at index N/2.
+  const rotatedN = 100_000;
+  const rotatedShift = 50_000;
+  const rotatedArray = values(rotatedN, (index) => ((index + rotatedShift) % rotatedN) + 1);
+
+  // --- Matrix additions ------------------------------------------------------
+  // spiral-matrix: 200 x 500 grid of 1..100000, expected spiral computed here.
+  const spiralRows = 200;
+  const spiralCols = 500;
+  const spiralGrid = values(spiralRows, (r) => values(spiralCols, (c) => r * spiralCols + c + 1));
+  const spiralBody = spiralGrid.map((row) => row.join(" ")).join("\n");
+  const spiralOrder = [];
+  {
+    let top = 0;
+    let bottom = spiralRows - 1;
+    let left = 0;
+    let right = spiralCols - 1;
+    while (top <= bottom && left <= right) {
+      for (let c = left; c <= right; c += 1) spiralOrder.push(spiralGrid[top][c]);
+      top += 1;
+      for (let r = top; r <= bottom; r += 1) spiralOrder.push(spiralGrid[r][right]);
+      right -= 1;
+      if (top <= bottom) {
+        for (let c = right; c >= left; c -= 1) spiralOrder.push(spiralGrid[bottom][c]);
+        bottom -= 1;
+      }
+      if (left <= right) {
+        for (let r = bottom; r >= top; r -= 1) spiralOrder.push(spiralGrid[r][left]);
+        left += 1;
+      }
+    }
+  }
+
+  // rotate-image: 300 x 300 grid of 1..90000, rotated 90 degrees clockwise.
+  const rotateSize = 300;
+  const rotateGrid = values(rotateSize, (r) => values(rotateSize, (c) => r * rotateSize + c + 1));
+  const rotateBody = rotateGrid.map((row) => row.join(" ")).join("\n");
+  const rotateResult = values(rotateSize, (i) =>
+    values(rotateSize, (j) => rotateGrid[rotateSize - 1 - j][i]).join(" "),
+  ).join("\n");
+
+  // set-matrix-zeroes: 300 x 300 of ones with a single zero at the center.
+  const zeroSize = 300;
+  const zeroCenter = 150;
+  const zeroBody = values(zeroSize, (r) =>
+    values(zeroSize, (c) => (r === zeroCenter && c === zeroCenter ? 0 : 1)).join(" "),
+  ).join("\n");
+  const zeroResult = values(zeroSize, (r) =>
+    values(zeroSize, (c) => (r === zeroCenter || c === zeroCenter ? 0 : 1)).join(" "),
+  ).join("\n");
+
+  // sudoku-solver: a famously hard 17-clue puzzle (heavy backtracking).
+  const hardSudoku =
+    "8........\n..36.....\n.7..9.2..\n.5...7...\n....457..\n...1...3.\n..1....68\n..85...1.\n.9....4..\n";
+  const hardSudokuSolution =
+    "812753649\n943682175\n675491283\n154237896\n369845721\n287169534\n521974368\n438526917\n796318452\n";
+
+  // --- Binary search additions -----------------------------------------------
+  // time-based-key-value-store: 50k sets on one key then 50k time-exact gets.
+  const kvN = 50_000;
+  const kvSets = values(kvN, (index) => `set k ${index + 1} ${index + 1}`).join("\n");
+  const kvGets = values(kvN, (index) => `get k ${index + 1}`).join("\n");
+  const kvOutput = `${range(kvN).join("\n")}\n`;
+
+  // maximum-profit-in-job-scheduling: 100k non-overlapping unit-profit jobs.
+  const jobsN = 100_000;
+  const jobsBody = values(jobsN, (index) => `${index + 1} ${index + 2} 1`).join("\n");
+
+  // median-of-two-sorted-arrays: odds and evens interleave to 1..100000.
+  const medianN = 50_000;
+  const medianOdds = values(medianN, (index) => 2 * index + 1);
+  const medianEvens = values(medianN, (index) => 2 * index + 2);
+
   return {
     "sum-two-numbers": [makeTest("1000000000 -1000000000\n", "0\n")],
     "two-sum": [
@@ -268,6 +382,40 @@ function buildStressTests() {
       ),
     ],
     "palindrome-pairs": [makeTest(`${palindromeN}\n${palindromeWords.join("\n")}\n`, "EMPTY\n")],
+    "valid-parentheses": [makeTest(`${balancedParens}\n`, "true\n")],
+    "min-stack": [
+      makeTest(`${2 * minStackN}\n${minStackPushes}\n${minStackQueries}\n`, minStackOutput),
+    ],
+    "evaluate-reverse-polish-notation": [
+      makeTest(`${rpnTokens.length}\n${line(rpnTokens)}`, `${rpnSum}\n`),
+    ],
+    "daily-temperatures": [makeTest(`${dailyTempN}\n${line(dailyTempValues)}`, dailyTempOutput)],
+    "binary-search": [
+      makeTest(
+        `${binarySearchN} ${binarySearchN}\n${line(binarySearchValues)}`,
+        `${binarySearchN - 1}\n`,
+      ),
+    ],
+    "search-a-2d-matrix": [
+      makeTest(`${matrixRows} ${matrixCols} ${matrixTarget}\n${matrixBody}\n`, "true\n"),
+    ],
+    "koko-eating-bananas": [makeTest(`${kokoN} ${kokoN}\n${line(kokoPiles)}`, "1000000000\n")],
+    "search-in-rotated-sorted-array": [
+      makeTest(`${rotatedN} 1\n${line(rotatedArray)}`, `${rotatedShift}\n`),
+    ],
+    "find-minimum-in-rotated-sorted-array": [makeTest(`${rotatedN}\n${line(rotatedArray)}`, "1\n")],
+    "spiral-matrix": [
+      makeTest(`${spiralRows} ${spiralCols}\n${spiralBody}\n`, `${spiralOrder.join(" ")}\n`),
+    ],
+    "rotate-image": [makeTest(`${rotateSize}\n${rotateBody}\n`, `${rotateResult}\n`)],
+    "set-matrix-zeroes": [makeTest(`${zeroSize} ${zeroSize}\n${zeroBody}\n`, `${zeroResult}\n`)],
+    "sudoku-solver": [makeTest(hardSudoku, hardSudokuSolution)],
+    "first-bad-version": [makeTest("2000000000 1234567891\n", "1234567891\n")],
+    "time-based-key-value-store": [makeTest(`${2 * kvN}\n${kvSets}\n${kvGets}\n`, kvOutput)],
+    "maximum-profit-in-job-scheduling": [makeTest(`${jobsN}\n${jobsBody}\n`, `${jobsN}\n`)],
+    "median-of-two-sorted-arrays": [
+      makeTest(`${medianN} ${medianN}\n${line(medianOdds)}${line(medianEvens)}`, `${medianN}.5\n`),
+    ],
   };
 }
 
