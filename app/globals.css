@@ -1080,6 +1080,24 @@ a.notification-row:hover {
   margin-top: 28px;
 }
 
+.practice-week {
+  margin-top: 36px;
+}
+
+.practice-week-header {
+  margin: 0;
+  color: var(--accent);
+  font-family: var(--font-main);
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.practice-week .problem-list {
+  margin-top: 14px;
+}
+
 .problem-list {
   display: grid;
   margin-top: 28px;

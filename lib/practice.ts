@@ -11,6 +11,42 @@ export const PRACTICE_DIFFICULTY_SCORES: Record<ProblemDifficulty, number> = {
   [ProblemDifficulty.HARD]: 7,
 };
 
+// Grind75-style weekly time budget (hours=6 in the reference distribution).
+export const PRACTICE_WEEK_MINUTES = 6 * 60;
+export const PRACTICE_DIFFICULTY_MINUTES: Record<ProblemDifficulty, number> = {
+  [ProblemDifficulty.EASY]: 15,
+  [ProblemDifficulty.MEDIUM]: 30,
+  [ProblemDifficulty.HARD]: 45,
+};
+
+export function groupProblemsByWeek<T extends { difficulty: ProblemDifficulty }>(
+  problems: T[],
+  weeklyBudgetMinutes = PRACTICE_WEEK_MINUTES,
+): { week: number; problems: T[] }[] {
+  const weeks: { week: number; problems: T[] }[] = [];
+  let current: T[] = [];
+  let currentMinutes = 0;
+
+  for (const problem of problems) {
+    const estimate = PRACTICE_DIFFICULTY_MINUTES[problem.difficulty];
+
+    if (current.length > 0 && currentMinutes + estimate > weeklyBudgetMinutes) {
+      weeks.push({ week: weeks.length + 1, problems: current });
+      current = [];
+      currentMinutes = 0;
+    }
+
+    current.push(problem);
+    currentMinutes += estimate;
+  }
+
+  if (current.length > 0) {
+    weeks.push({ week: weeks.length + 1, problems: current });
+  }
+
+  return weeks;
+}
+
 type PracticeSubmission = { problemId: string; userId: string; difficulty: ProblemDifficulty };
 type PracticeUser = {
   id: string;

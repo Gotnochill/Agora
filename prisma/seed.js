@@ -850,16 +850,19 @@ async function main() {
       tags: problem.tags,
       difficulty: problem.difficulty,
       timeLimitMs: problem.timeLimitMs,
-      published: false,
       practiceOrder: 300000,
       solutionCode: primarySolution?.code,
       solutionLanguage: primarySolution?.language,
     };
 
+    // `published` is owned by the app after seeding: finalizing a contest
+    // releases its problems to the Practice tab (published: true). Only set the
+    // contest-only default on create so reseeds never un-publish a finalized
+    // contest's problems.
     const savedProblem = await prisma.problem.upsert({
       where: { slug: problem.slug },
       update: problemData,
-      create: problemData,
+      create: { ...problemData, published: false },
       select: { id: true },
     });
 
@@ -882,6 +885,8 @@ async function main() {
   }
 
   // Sunday 8:00 PM IST (14:30 UTC), one-hour window, 60-minute personal timer.
+  // `status` is owned by the app after seeding (e.g. finalizing the contest),
+  // so it is only set on create to avoid reverting a FINALIZED contest on reseed.
   const contestTwo = await prisma.contest.upsert({
     where: { slug: CONTEST_TWO_SLUG },
     update: {
@@ -891,7 +896,6 @@ async function main() {
       startsAt: new Date("2026-07-05T14:30:00.000Z"),
       endsAt: new Date("2026-07-05T15:30:00.000Z"),
       durationMinutes: 60,
-      status: "PUBLISHED",
     },
     create: {
       slug: CONTEST_TWO_SLUG,
