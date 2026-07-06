@@ -3,7 +3,7 @@ import { auth } from "../../../auth";
 import { ProblemWorkspace } from "../../../components/practice/problem-workspace";
 import { supportedLanguageOptions } from "../../../lib/judge";
 import { prisma } from "../../../lib/prisma";
-import { submitSolution } from "./actions";
+import { runSolution, submitSolution } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -106,6 +106,7 @@ export default async function ProblemDetailPage({
           languageOptions={supportedLanguageOptions()}
           submissions={Array.isArray(problem.submissions) ? problem.submissions : []}
           submitAction={submitSolution}
+          runAction={canSubmit ? runSolution : undefined}
           hiddenFields={{ problemSlug: problem.slug }}
           draftScope={problem.slug}
           canSubmit={canSubmit}

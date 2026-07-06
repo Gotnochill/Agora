@@ -1621,6 +1621,23 @@ body.is-resizing-panes {
   height: 100%;
 }
 
+.editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.editor-actions .button,
+.editor-actions .secondary-button {
+  flex: 1 1 auto;
+}
+
+.submission-note {
+  font-style: italic;
+  opacity: 0.75;
+}
+
 .practice-workspace .problem-section h2 {
   font-size: clamp(1.2rem, 2vw, 1.7rem);
   letter-spacing: -0.03em;

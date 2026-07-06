@@ -10,7 +10,7 @@ import {
 } from "../../../../../lib/contest";
 import { supportedLanguageOptions } from "../../../../../lib/judge";
 import { prisma } from "../../../../../lib/prisma";
-import { runContestPreview, submitContestSolution } from "../../actions";
+import { runContestPreview, runContestSolution, submitContestSolution } from "../../actions";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -159,13 +159,6 @@ export default async function ContestProblemPage({
             >
               {difficultyLabels[contestProblem.problem.difficulty]}
             </span>
-            {contestProblem.problem.tags.length > 0 ? (
-              <div className="problem-tag-list">
-                {contestProblem.problem.tags.map((tag) => (
-                  <span key={tag}>{tag}</span>
-                ))}
-              </div>
-            ) : null}
           </div>
           <div className="practice-detail-actions">
             {contestProblems.length > 1 ? (
@@ -223,6 +216,7 @@ export default async function ContestProblemPage({
           languageOptions={supportedLanguageOptions()}
           submissions={previewMode ? [] : submissions}
           submitAction={previewMode ? runContestPreview : submitContestSolution}
+          runAction={previewMode ? undefined : runContestSolution}
           hiddenFields={
             previewMode
               ? { problemSlug: contestProblem.problem.slug }

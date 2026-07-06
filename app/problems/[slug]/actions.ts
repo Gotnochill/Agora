@@ -15,6 +15,14 @@ const DAILY_SUBMISSION_LIMIT = 50;
 const MAX_CODE_LENGTH = 20_000;
 const FAILURE_MESSAGE_LIMIT = 4_000;
 
+type RunResult = {
+  verdict: string;
+  passedCount: number;
+  totalCount: number;
+  runtimeMs: number | null;
+  failureMessage?: string | null;
+};
+
 const submissionSchema = z.object({
   problemSlug: z.string().trim().min(1),
   language: z.string().trim().min(1),
@@ -27,6 +35,16 @@ function failureMessageFromError(error: unknown) {
       ? error.message
       : "Judge service failed before the submission could complete.";
   return message.replace(/\s+/g, " ").trim().slice(0, FAILURE_MESSAGE_LIMIT);
+}
+
+function runError(message: string): RunResult {
+  return {
+    verdict: SubmissionVerdict.RUNTIME_ERROR,
+    passedCount: 0,
+    totalCount: 0,
+    runtimeMs: null,
+    failureMessage: message,
+  };
 }
 
 export async function submitSolution(formData: FormData) {
@@ -143,4 +161,56 @@ export async function submitSolution(formData: FormData) {
 
   revalidatePath("/problems");
   revalidatePath(`/problems/${problem.slug}`);
+}
+
+// Run the member's code against the sample tests only, without persisting a
+// submission. Lets members catch compile errors and check sample output before
+// committing to a real submission (which counts toward stats and rate limits).
+export async function runSolution(formData: FormData): Promise<RunResult> {
+  await requireActiveUser();
+  const parsed = submissionSchema.safeParse({
+    problemSlug: formData.get("problemSlug"),
+    language: formData.get("language"),
+    code: formData.get("code"),
+  });
+
+  if (!parsed.success || !isSupportedLanguage(parsed.data.language)) {
+    return runError("Unsupported language or invalid request.");
+  }
+  if (parsed.data.code.trim().length === 0) {
+    return runError("Write some code before running.");
+  }
+
+  const problem = await prisma.problem.findFirst({
+    where: { slug: parsed.data.problemSlug, published: true },
+    select: {
+      timeLimitMs: true,
+      testCases: {
+        where: { isSample: true },
+        orderBy: { order: "asc" },
+        select: { input: true, expectedOutput: true, isSample: true },
+      },
+    },
+  });
+
+  if (!problem || problem.testCases.length === 0) {
+    return runError("This problem has no sample tests to run against.");
+  }
+
+  try {
+    return await runJudge({
+      code: parsed.data.code,
+      language: parsed.data.language,
+      testCases: problem.testCases,
+      timeLimitMs: problem.timeLimitMs,
+    });
+  } catch (error) {
+    return {
+      verdict: SubmissionVerdict.RUNTIME_ERROR,
+      passedCount: 0,
+      totalCount: problem.testCases.length,
+      runtimeMs: null,
+      failureMessage: failureMessageFromError(error),
+    };
+  }
 }
