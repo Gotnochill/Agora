@@ -672,10 +672,10 @@ async function main() {
 
   const contestTierBadges = [
     { name: "Rough Shard", description: "Contest rating below 1100.", xp: 25 },
-    { name: "Cut Shard", description: "Contest rating 1100-1249.", xp: 50 },
-    { name: "Polished Shard", description: "Contest rating 1250-1399.", xp: 100 },
-    { name: "Radiant Shard", description: "Contest rating 1400-1599.", xp: 200 },
-    { name: "Molten Shard", description: "Contest rating 1600+.", xp: 400 },
+    { name: "Cut Shard", description: "Contest rating 1100-1249.", xp: 100 },
+    { name: "Polished Shard", description: "Contest rating 1250-1399.", xp: 500 },
+    { name: "Radiant Shard", description: "Contest rating 1400-1599.", xp: 2000 },
+    { name: "Molten Shard", description: "Contest rating 1600+.", xp: 3000 },
   ];
 
   for (const badge of contestTierBadges) {
