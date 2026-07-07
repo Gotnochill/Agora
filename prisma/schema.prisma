@@ -68,6 +68,7 @@ enum NotificationType {
   BADGE_EARNED
   CONTEST_FINISHED
   OVERALL_RANK_UP
+  NUDGE_RECEIVED
 }
 
 model User {
@@ -105,6 +106,7 @@ model User {
   reviewedApplications Application[] @relation("ApplicationReviewer")
   recommendedResources Resource[]    @relation("ResourceRecommender")
   notifications Notification[] @relation("NotificationActor")
+  receivedNotifications Notification[] @relation("NotificationRecipient")
 }
 
 // The yearly application round. One cohort is active at a time; admins edit its
@@ -568,15 +570,18 @@ model ContestParticipant {
 // (the achiever) is excluded from their own notifications. Read state is tracked
 // per user via User.notificationsSeenAt rather than fanning out one row per user.
 model Notification {
-  id        String           @id @default(cuid())
-  type      NotificationType
-  actorId   String?
-  message   String
-  link      String?
-  createdAt DateTime         @default(now())
+  id          String           @id @default(cuid())
+  type        NotificationType
+  actorId     String?
+  recipientId String?
+  message     String
+  link        String?
+  createdAt   DateTime         @default(now())
 
-  actor User? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
+  actor     User? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
+  recipient User? @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
 
   @@index([createdAt])
   @@index([actorId])
+  @@index([recipientId])
 }

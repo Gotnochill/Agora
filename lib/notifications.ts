@@ -28,6 +28,10 @@ export function overallRankUpMessage(name: string, rank: number) {
     : `${name} climbed to #${rank} on the overall XP leaderboard.`;
 }
 
+export function nudgeReceivedMessage(senderName: string, title: string) {
+  return `${senderName} nudged you: "${title}"`;
+}
+
 export function relativeTimeFromNow(date: Date, now: Date = new Date()) {
   const seconds = Math.round((now.getTime() - date.getTime()) / 1000);
 
@@ -74,6 +78,7 @@ type CreateNotificationInput = {
   type: NotificationType;
   message: string;
   actorId?: string | null;
+  recipientId?: string | null;
   link?: string | null;
 };
 
@@ -85,6 +90,7 @@ export async function createNotification(input: CreateNotificationInput) {
         type: input.type,
         message: input.message,
         actorId: input.actorId ?? null,
+        recipientId: input.recipientId ?? null,
         link: input.link ?? null,
       },
     });
@@ -133,9 +139,15 @@ export async function withOverallRankNotifications<T>(mutate: () => Promise<T>):
   return result;
 }
 
-// The actor never sees their own achievement; everyone else does.
+// Broadcasts (recipientId null) reach everyone except the actor; targeted
+// notifications (recipientId set) reach only their recipient.
 function visibleToUser(userId: string) {
-  return { OR: [{ actorId: null }, { actorId: { not: userId } }] };
+  return {
+    OR: [
+      { AND: [{ recipientId: null }, { OR: [{ actorId: null }, { actorId: { not: userId } }] }] },
+      { recipientId: userId },
+    ],
+  };
 }
 
 export async function listNotifications(userId: string, limit = NOTIFICATION_FEED_LIMIT) {

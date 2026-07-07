@@ -6,7 +6,13 @@ import { markNotificationsSeenAction } from "./notifications/actions";
 
 export type NotificationItem = {
   id: string;
-  type: "PRACTICE_SOLVED" | "RANK_UP" | "BADGE_EARNED" | "CONTEST_FINISHED" | "OVERALL_RANK_UP";
+  type:
+    | "PRACTICE_SOLVED"
+    | "RANK_UP"
+    | "BADGE_EARNED"
+    | "CONTEST_FINISHED"
+    | "OVERALL_RANK_UP"
+    | "NUDGE_RECEIVED";
   message: string;
   link: string | null;
   timeLabel: string;
@@ -18,6 +24,7 @@ const ICONS: Record<NotificationItem["type"], string> = {
   BADGE_EARNED: "🏅",
   CONTEST_FINISHED: "🏆",
   OVERALL_RANK_UP: "📈",
+  NUDGE_RECEIVED: "👋",
 };
 
 export default function NotificationBell({
