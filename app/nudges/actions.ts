@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireActiveUser } from "../../lib/guards";
+import { memberDisplayName } from "../../lib/members";
+import { createNotification, nudgeReceivedMessage } from "../../lib/notifications";
 import { nudgeSchema } from "../../lib/nudges";
 import { prisma } from "../../lib/prisma";
 
@@ -72,6 +74,26 @@ export async function sendNudge(
       link: data.link,
       status: NudgeStatus.PENDING,
     },
+  });
+
+  const sender = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: {
+      name: true,
+      email: true,
+      profile: { select: { displayName: true } },
+    },
+  });
+
+  await createNotification({
+    type: "NUDGE_RECEIVED",
+    actorId: user.id,
+    recipientId: recipient.id,
+    message: nudgeReceivedMessage(
+      sender ? memberDisplayName(sender) : "A ShardUp member",
+      data.title,
+    ),
+    link: `/members/${recipient.id}#nudges`,
   });
 
   revalidateNudgeProfiles(user.id, recipient.id);
