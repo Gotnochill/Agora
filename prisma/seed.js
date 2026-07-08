@@ -9,6 +9,11 @@ const {
   contestTwoProblems,
   buildContestTwoStressTests,
 } = require("./contest-problem-set");
+const {
+  CONTEST_THREE_SLUG,
+  contestThreeProblems,
+  buildContestThreeStressTests,
+} = require("./contest-problem-set-3");
 
 const prisma = new PrismaClient();
 
@@ -914,6 +919,109 @@ async function main() {
   await prisma.contestProblem.createMany({
     data: contestTwoProblemIds.map((problemId, index) => ({
       contestId: contestTwo.id,
+      problemId,
+      label: String.fromCharCode("A".charCodeAt(0) + index),
+      order: index,
+    })),
+  });
+
+  // ShardUp Contest #3: three custom, escalating problems. Seeded unpublished so
+  // they only appear inside the contest, with reference solutions for admins.
+  const contestThreeStress = buildContestThreeStressTests();
+  const contestThreeProblemIds = [];
+
+  for (const problem of contestThreeProblems) {
+    const testCases = [
+      ...problem.samples.map((testCase, index) => ({
+        input: testCase.input,
+        expectedOutput: testCase.expectedOutput,
+        isSample: true,
+        order: index,
+      })),
+      ...[...problem.hidden, ...(contestThreeStress[problem.slug] ?? [])].map(
+        (testCase, index) => ({
+          input: testCase.input,
+          expectedOutput: testCase.expectedOutput,
+          isSample: false,
+          order: problem.samples.length + index,
+        }),
+      ),
+    ];
+
+    const referenceSolutions = readReferenceSolutions(problem.slug);
+    const primarySolution = referenceSolutions.find((solution) => solution.language === "python");
+    const problemData = {
+      slug: problem.slug,
+      title: problem.title,
+      statement: problem.statement,
+      constraints: problem.constraints,
+      tags: problem.tags,
+      difficulty: problem.difficulty,
+      timeLimitMs: problem.timeLimitMs,
+      practiceOrder: 300000,
+      solutionCode: primarySolution?.code,
+      solutionLanguage: primarySolution?.language,
+    };
+
+    // `published` is owned by the app after seeding: finalizing a contest
+    // releases its problems to the Practice tab (published: true). Only set the
+    // contest-only default on create so reseeds never un-publish a finalized
+    // contest's problems.
+    const savedProblem = await prisma.problem.upsert({
+      where: { slug: problem.slug },
+      update: problemData,
+      create: { ...problemData, published: false },
+      select: { id: true },
+    });
+
+    await prisma.testCase.deleteMany({ where: { problemId: savedProblem.id } });
+    await prisma.testCase.createMany({
+      data: testCases.map((testCase) => ({ ...testCase, problemId: savedProblem.id })),
+    });
+
+    await prisma.problemReferenceSolution.deleteMany({ where: { problemId: savedProblem.id } });
+    if (referenceSolutions.length > 0) {
+      await prisma.problemReferenceSolution.createMany({
+        data: referenceSolutions.map((solution) => ({
+          ...solution,
+          problemId: savedProblem.id,
+        })),
+      });
+    }
+
+    contestThreeProblemIds.push(savedProblem.id);
+  }
+
+  // Saturday 8:00 PM IST (14:30 UTC), one-hour window, 60-minute personal timer.
+  // `status` is owned by the app after seeding (e.g. finalizing the contest),
+  // so it is only set on create to avoid reverting a FINALIZED contest on reseed.
+  const contestThree = await prisma.contest.upsert({
+    where: { slug: CONTEST_THREE_SLUG },
+    update: {
+      title: "ShardUp Contest #3",
+      description:
+        "A one-hour, three-problem sprint that starts Saturday at 8:00 PM IST. The three problems escalate in difficulty (A < B < C) and are revealed only when the contest opens. Register during the window, then race your personal 60-minute timer.",
+      startsAt: new Date("2026-07-11T14:30:00.000Z"),
+      endsAt: new Date("2026-07-11T15:30:00.000Z"),
+      durationMinutes: 60,
+    },
+    create: {
+      slug: CONTEST_THREE_SLUG,
+      title: "ShardUp Contest #3",
+      description:
+        "A one-hour, three-problem sprint that starts Saturday at 8:00 PM IST. The three problems escalate in difficulty (A < B < C) and are revealed only when the contest opens. Register during the window, then race your personal 60-minute timer.",
+      startsAt: new Date("2026-07-11T14:30:00.000Z"),
+      endsAt: new Date("2026-07-11T15:30:00.000Z"),
+      durationMinutes: 60,
+      status: "PUBLISHED",
+    },
+    select: { id: true },
+  });
+
+  await prisma.contestProblem.deleteMany({ where: { contestId: contestThree.id } });
+  await prisma.contestProblem.createMany({
+    data: contestThreeProblemIds.map((problemId, index) => ({
+      contestId: contestThree.id,
       problemId,
       label: String.fromCharCode("A".charCodeAt(0) + index),
       order: index,
