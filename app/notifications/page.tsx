@@ -14,6 +14,8 @@ const NOTIFICATION_ICONS: Record<NotificationType, string> = {
   RANK_UP: "⬆️",
   BADGE_EARNED: "🏅",
   CONTEST_FINISHED: "🏆",
+  CONTEST_PUBLISHED: "🎯",
+  EVENT_PUBLISHED: "📅",
   OVERALL_RANK_UP: "📈",
   NUDGE_RECEIVED: "👋",
 };

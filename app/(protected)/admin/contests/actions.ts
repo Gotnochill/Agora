@@ -16,6 +16,7 @@ import { requireAdmin } from "../../../../lib/guards";
 import { memberDisplayName } from "../../../../lib/members";
 import {
   contestFinishedMessage,
+  contestPublishedMessage,
   createNotification,
   rankUpMessage,
   shouldNotifyRankUp,
@@ -86,7 +87,7 @@ export async function createContest(formData: FormData) {
 }
 
 export async function publishContest(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const contestId = String(formData.get("contestId") ?? "");
 
   if (!contestId) {
@@ -95,17 +96,36 @@ export async function publishContest(formData: FormData) {
 
   const contest = await prisma.contest.findUnique({
     where: { id: contestId },
-    select: { id: true, slug: true, _count: { select: { problems: true } } },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      status: true,
+      _count: { select: { problems: true } },
+    },
   });
 
   if (!contest || contest._count.problems === 0) {
     redirect(`/admin/contests/${contestId}?error=problems`);
   }
 
+  const wasPublished = contest.status !== ContestStatus.DRAFT;
+
   await prisma.contest.update({
     where: { id: contestId },
     data: { status: ContestStatus.PUBLISHED },
   });
+
+  // Announce a contest only the first time it leaves DRAFT, so re-publishing or
+  // idempotent status writes never spam the feed with duplicates.
+  if (!wasPublished) {
+    await createNotification({
+      type: "CONTEST_PUBLISHED",
+      actorId: admin.id,
+      message: contestPublishedMessage(contest.title),
+      link: `/contests/${contest.slug}`,
+    });
+  }
 
   revalidatePath("/contests");
   revalidatePath(`/contests/${contest.slug}`);
