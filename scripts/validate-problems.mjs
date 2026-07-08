@@ -2,13 +2,14 @@
 // solution. Reads problems from the DB (read-only), runs each reference on every
 // test input, and diffs the output using the judge's normalizeOutput rules.
 //
-// Run: node --env-file=.env.local scripts/validate-problems.mjs
+// Run: tsx --env-file=.env.local scripts/validate-problems.mjs
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../lib/generated/prisma/client.ts";
+import { createPrismaAdapter } from "../lib/prisma-adapter.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const solutionsDir = join(here, "reference-solutions");
@@ -27,7 +28,7 @@ function normalizeOutput(output) {
     .replace(/\s+$/, "");
 }
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ adapter: createPrismaAdapter(process.env.DATABASE_URL) });
 
 const problems = await prisma.problem.findMany({
   orderBy: { createdAt: "asc" },

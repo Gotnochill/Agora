@@ -1,4 +1,4 @@
-import type { NotificationType } from "@prisma/client";
+import type { NotificationType } from "@/prisma-client";
 import { requireActiveUser } from "../../lib/guards";
 import {
   listNotifications,

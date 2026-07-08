@@ -1,4 +1,4 @@
-import { ContestStatus } from "@prisma/client";
+import { ContestStatus } from "@/prisma-client";
 import { notFound } from "next/navigation";
 import { contestPhase, formatContestTiming, toContestInputValue } from "../../../../../lib/contest";
 import { requireAdmin } from "../../../../../lib/guards";

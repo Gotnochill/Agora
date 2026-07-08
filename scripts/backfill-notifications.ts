@@ -14,7 +14,12 @@
  * Run (local):  DATABASE_URL=... npx tsx scripts/backfill-notifications.ts
  * Run (prod):   DATABASE_URL="<neon url>" npx tsx scripts/backfill-notifications.ts
  */
-import { NotificationType, ProblemDifficulty, SubmissionVerdict, UserStatus } from "@prisma/client";
+import {
+  NotificationType,
+  ProblemDifficulty,
+  SubmissionVerdict,
+  UserStatus,
+} from "../lib/generated/prisma/client";
 import {
   memberDisplayName,
   memberTotalXp,

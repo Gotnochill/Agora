@@ -1,4 +1,4 @@
-import { NotificationType, UserStatus } from "@prisma/client";
+import { NotificationType, UserStatus } from "@/prisma-client";
 import { RATING_TIER_BADGES, tierForRating } from "./contest";
 import {
   memberDisplayName,

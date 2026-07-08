@@ -1,4 +1,4 @@
-import { ApplicationStatus, Role, UserStatus } from "@prisma/client";
+import { ApplicationStatus, Role, UserStatus } from "@/prisma-client";
 import { prisma } from "./prisma";
 
 function getAdminEmails() {

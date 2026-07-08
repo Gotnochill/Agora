@@ -1,4 +1,4 @@
-import type { SubmissionVerdict } from "@prisma/client";
+import type { SubmissionVerdict } from "@/prisma-client";
 import type { SupportedLanguage } from "./languages";
 
 export type JudgeTestCase = {

@@ -1,4 +1,4 @@
-import { UserStatus } from "@prisma/client";
+import { UserStatus } from "@/prisma-client";
 import { notFound } from "next/navigation";
 import { auth } from "../../../auth";
 import {

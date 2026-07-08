@@ -1,4 +1,4 @@
-import { Role, UserStatus } from "@prisma/client";
+import { Role, UserStatus } from "@/prisma-client";
 import { redirect } from "next/navigation";
 import { auth } from "../auth";
 

@@ -5,7 +5,7 @@
 // well-known LeetCode task or an existing practice problem.
 //
 // Reference solutions live in scripts/reference-solutions/<slug>.{py,cpp} and are
-// attached by prisma/seed.js. Stress-test outputs below are closed-form and
+// attached by prisma/seed.mjs. Stress-test outputs below are closed-form and
 // cross-checked against the references (see scripts/verify-contest-3.mjs).
 
 const CONTEST_THREE_SLUG = "shardup-contest-3";

@@ -4,7 +4,7 @@
 // customized and made harder (negatives, big answers, tighter complexity).
 //
 // Reference solutions live in scripts/reference-solutions/<slug>.{py,cpp} and are
-// attached by prisma/seed.js. Efficiency test outputs below are formula-derived
+// attached by prisma/seed.mjs. Efficiency test outputs below are formula-derived
 // and cross-checked against the references (see scripts/validate-problems.mjs).
 
 const CONTEST_TWO_SLUG = "shardup-contest-2";

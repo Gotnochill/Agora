@@ -1,4 +1,4 @@
-import { ProblemDifficulty, SubmissionVerdict } from "@prisma/client";
+import { ProblemDifficulty, SubmissionVerdict } from "@/prisma-client";
 import { revalidatePath } from "next/cache";
 import { memberDisplayName } from "./members";
 import { badgeEarnedMessage, createNotification } from "./notifications";

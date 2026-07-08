@@ -1,4 +1,4 @@
-import { Role } from "@prisma/client";
+import { Role } from "@/prisma-client";
 import { requireActiveUser } from "../../lib/guards";
 import { prisma } from "../../lib/prisma";
 import { createTeachingSession } from "../(protected)/admin/teaching/actions";

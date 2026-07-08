@@ -1,4 +1,4 @@
-import { SubmissionVerdict } from "@prisma/client";
+import { SubmissionVerdict } from "@/prisma-client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { isSupportedLanguage, judgeSubmission, normalizeOutput } from "../../../lib/judge";
 import { executeWithPiston } from "../../../lib/judge/piston";

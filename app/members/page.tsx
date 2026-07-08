@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 
-import { UserStatus } from "@prisma/client";
+import { UserStatus } from "@/prisma-client";
 import { DEFAULT_CONTEST_RATING, tierForRating } from "../../lib/contest";
 import {
   medalsForMembers,

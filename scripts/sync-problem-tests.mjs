@@ -1,18 +1,19 @@
-// Syncs problem test cases in the DB to match prisma/seed.js without running the
+// Syncs problem test cases in the DB to match prisma/seed.mjs without running the
 // full seed (which would touch unrelated data). Fixes the gas-station expected
 // output and appends the shared hidden edge-case and stress tests. Idempotent
 // (matches by input).
 //
-// Run: node --env-file=.env.local scripts/sync-problem-tests.mjs
+// Run: tsx --env-file=.env.local scripts/sync-problem-tests.mjs
 import { createRequire } from "node:module";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../lib/generated/prisma/client.ts";
+import { createPrismaAdapter } from "../lib/prisma-adapter.ts";
 
 const require = createRequire(import.meta.url);
 const hiddenTests = require("../prisma/hidden-tests.json");
 const { buildStressTests } = require("../prisma/hidden-stress-tests.js");
 const stressTests = buildStressTests();
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ adapter: createPrismaAdapter(process.env.DATABASE_URL) });
 
 // 1. Correct the wrong gas-station hidden test (expected 0 -> 2).
 const gasFix = await prisma.testCase.updateMany({

@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 
-import { Role, UserStatus } from "@prisma/client";
+import { Role, UserStatus } from "@/prisma-client";
 import { notFound } from "next/navigation";
 import { auth } from "../../../auth";
 import { formatEventDetailDate } from "../../../lib/events";

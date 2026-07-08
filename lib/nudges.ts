@@ -1,4 +1,4 @@
-import { NudgeStatus } from "@prisma/client";
+import { NudgeStatus } from "@/prisma-client";
 import { z } from "zod";
 
 const optionalUrl = z

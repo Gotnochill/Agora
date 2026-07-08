@@ -1,4 +1,4 @@
-import { NudgeStatus } from "@prisma/client";
+import { NudgeStatus } from "@/prisma-client";
 import { describe, expect, it } from "vitest";
 import {
   canAccept,

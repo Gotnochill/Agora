@@ -1,4 +1,4 @@
-import { ContestStatus, SubmissionVerdict } from "@prisma/client";
+import { ContestStatus, SubmissionVerdict } from "@/prisma-client";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { memberDisplayName } from "./members";

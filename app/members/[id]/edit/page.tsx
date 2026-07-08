@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 
-import { Role, UserStatus } from "@prisma/client";
+import { Role, UserStatus } from "@/prisma-client";
 import { notFound, redirect } from "next/navigation";
 import CompressingImageInput from "../../../compressing-image-input";
 import { auth } from "../../../../auth";
