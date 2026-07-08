@@ -12,6 +12,7 @@ import {
   standingsWithNames,
 } from "../../../lib/contest";
 import { prisma } from "../../../lib/prisma";
+import ContestRsvpControl from "../rsvp-control";
 import { registerForContest } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,7 @@ export default async function ContestDetailPage({
         include: { problem: { select: { title: true, difficulty: true, slug: true } } },
       },
       registrations: { select: { id: true, userId: true, createdAt: true } },
+      rsvps: { where: { userId: session?.user?.id ?? "" }, select: { id: true } },
       submissions: {
         select: {
           userId: true,
@@ -38,6 +40,7 @@ export default async function ContestDetailPage({
           createdAt: true,
         },
       },
+      _count: { select: { rsvps: true } },
     },
   });
 
@@ -77,6 +80,7 @@ export default async function ContestDetailPage({
     session?.user?.status === UserStatus.ACTIVE && phase === "running" && !isRegistered;
   const canViewProblems = isRegistered && phase === "running";
   const isAdmin = session?.user?.role === "ADMIN" && session.user.status === UserStatus.ACTIVE;
+  const isGoing = contest.rsvps.length > 0;
 
   return (
     <main className="app-shell wide-card workspace-shell">
@@ -98,10 +102,19 @@ export default async function ContestDetailPage({
         ) : null}
 
         {phase === "upcoming" ? (
-          <div className="form-message">
-            This contest hasn&apos;t started yet. It opens {formatContestInstant(contest.startsAt)}{" "}
-            — come back then to start your {contestDurationMinutes(contest)}-minute timer.
-          </div>
+          <>
+            <div className="form-message">
+              This contest hasn&apos;t started yet. It opens{" "}
+              {formatContestInstant(contest.startsAt)} — come back then to start your{" "}
+              {contestDurationMinutes(contest)}-minute timer.
+            </div>
+            <p className="nudge-meta">{contest._count.rsvps} going</p>
+            <ContestRsvpControl
+              contestSlug={contest.slug}
+              userStatus={session?.user?.status}
+              isGoing={isGoing}
+            />
+          </>
         ) : null}
 
         {canStart ? (
