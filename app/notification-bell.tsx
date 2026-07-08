@@ -11,6 +11,8 @@ export type NotificationItem = {
     | "RANK_UP"
     | "BADGE_EARNED"
     | "CONTEST_FINISHED"
+    | "CONTEST_PUBLISHED"
+    | "EVENT_PUBLISHED"
     | "OVERALL_RANK_UP"
     | "NUDGE_RECEIVED";
   message: string;
@@ -23,6 +25,8 @@ const ICONS: Record<NotificationItem["type"], string> = {
   RANK_UP: "⬆️",
   BADGE_EARNED: "🏅",
   CONTEST_FINISHED: "🏆",
+  CONTEST_PUBLISHED: "🎯",
+  EVENT_PUBLISHED: "📅",
   OVERALL_RANK_UP: "📈",
   NUDGE_RECEIVED: "👋",
 };

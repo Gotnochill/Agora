@@ -67,6 +67,8 @@ enum NotificationType {
   RANK_UP
   BADGE_EARNED
   CONTEST_FINISHED
+  CONTEST_PUBLISHED
+  EVENT_PUBLISHED
   OVERALL_RANK_UP
   NUDGE_RECEIVED
 }
@@ -100,6 +102,7 @@ model User {
   boards Board[]
   createdContests Contest[] @relation("ContestCreator")
   contestRegistrations ContestRegistration[]
+  contestRsvps ContestRsvp[]
   contestSubmissions ContestSubmission[]
   contestParticipations ContestParticipant[]
 
@@ -488,6 +491,7 @@ model Contest {
   creator       User?                 @relation("ContestCreator", fields: [createdById], references: [id])
   problems      ContestProblem[]
   registrations ContestRegistration[]
+  rsvps         ContestRsvp[]
   submissions   ContestSubmission[]
   participants  ContestParticipant[]
 
@@ -516,6 +520,22 @@ model ContestRegistration {
   contestId String
   userId    String
   createdAt DateTime @default(now())
+
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([contestId, userId])
+  @@index([userId])
+}
+
+// Lightweight "I plan to attend" intent for an upcoming contest, separate from
+// ContestRegistration (which starts the personal timer once the contest is live).
+model ContestRsvp {
+  id        String   @id @default(cuid())
+  contestId String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)

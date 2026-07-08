@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { eventSchema, parseEventDate } from "../../../../lib/events";
 import { requireAdmin } from "../../../../lib/guards";
 import { validateProfilePhoto } from "../../../../lib/members";
+import { createNotification, eventPublishedMessage } from "../../../../lib/notifications";
 import { prisma } from "../../../../lib/prisma";
 
 function safeFilename(name: string) {
@@ -116,13 +117,23 @@ export async function createEvent(formData: FormData) {
     });
   }
 
+  // Only published events are visible to members, so announce those.
+  if (parsed.published) {
+    await createNotification({
+      type: "EVENT_PUBLISHED",
+      actorId: admin.id,
+      message: eventPublishedMessage(parsed.title),
+      link: `/events/${event.id}`,
+    });
+  }
+
   revalidatePath("/events");
   revalidatePath("/admin/events");
   redirect(successPath(returnTo));
 }
 
 export async function updateEvent(formData: FormData) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const eventId = String(formData.get("eventId") ?? "");
   const parsed = parseEventForm(formData);
 
@@ -163,6 +174,17 @@ export async function updateEvent(formData: FormData) {
       imageUrl,
     },
   });
+
+  // Announce when an event first becomes visible to members (draft -> published),
+  // so editing an already-published event never re-notifies.
+  if (!event.published && parsed.published) {
+    await createNotification({
+      type: "EVENT_PUBLISHED",
+      actorId: admin.id,
+      message: eventPublishedMessage(parsed.title),
+      link: `/events/${event.id}`,
+    });
+  }
 
   revalidatePath("/events");
   revalidatePath(`/events/${event.id}`);

@@ -72,6 +72,73 @@ export async function registerForContest(formData: FormData) {
   revalidatePath(`/contests/${contest.slug}`);
 }
 
+// RSVP is a lightweight "I plan to attend" intent that only applies before a
+// contest starts. Once it is live, members register (start their timer) instead.
+async function getUpcomingContest(slug: string) {
+  const contest = await prisma.contest.findFirst({
+    where: {
+      slug,
+      status: { in: [ContestStatus.PUBLISHED, ContestStatus.FINALIZED] },
+    },
+    select: { id: true, slug: true, startsAt: true },
+  });
+
+  if (!contest || new Date() >= contest.startsAt) {
+    return null;
+  }
+
+  return contest;
+}
+
+export async function rsvpToContest(formData: FormData) {
+  const user = await requireActiveUser();
+  const parsed = contestSlugSchema.safeParse({ contestSlug: formData.get("contestSlug") });
+
+  if (!parsed.success) {
+    redirect("/contests");
+  }
+
+  const contest = await getUpcomingContest(parsed.data.contestSlug);
+
+  if (!contest) {
+    redirect("/contests");
+  }
+
+  await prisma.contestRsvp.upsert({
+    where: { contestId_userId: { contestId: contest.id, userId: user.id } },
+    update: {},
+    create: { contestId: contest.id, userId: user.id },
+  });
+
+  revalidatePath("/contests");
+  revalidatePath(`/contests/${contest.slug}`);
+}
+
+export async function cancelContestRsvp(formData: FormData) {
+  const user = await requireActiveUser();
+  const parsed = contestSlugSchema.safeParse({ contestSlug: formData.get("contestSlug") });
+
+  if (!parsed.success) {
+    redirect("/contests");
+  }
+
+  const contest = await prisma.contest.findFirst({
+    where: { slug: parsed.data.contestSlug },
+    select: { id: true, slug: true },
+  });
+
+  if (!contest) {
+    redirect("/contests");
+  }
+
+  await prisma.contestRsvp.deleteMany({
+    where: { contestId: contest.id, userId: user.id },
+  });
+
+  revalidatePath("/contests");
+  revalidatePath(`/contests/${contest.slug}`);
+}
+
 export async function submitContestSolution(formData: FormData) {
   const user = await requireActiveUser();
   const parsed = submissionSchema.safeParse({

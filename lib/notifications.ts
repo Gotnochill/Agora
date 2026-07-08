@@ -65,6 +65,14 @@ export function contestFinishedMessage(contestTitle: string, winnerName: string 
     : `Contest "${contestTitle}" wrapped up.`;
 }
 
+export function contestPublishedMessage(contestTitle: string) {
+  return `New contest "${contestTitle}" is open — register and compete.`;
+}
+
+export function eventPublishedMessage(eventTitle: string) {
+  return `New event "${eventTitle}" — RSVP now.`;
+}
+
 // True only when the new rating lands in a strictly higher tier than the old one,
 // so we notify on promotions but stay quiet on same-tier changes or demotions.
 export function shouldNotifyRankUp(ratingBefore: number, ratingAfter: number) {
