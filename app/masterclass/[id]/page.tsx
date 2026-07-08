@@ -1,4 +1,4 @@
-import { Role } from "@prisma/client";
+import { Role } from "@/prisma-client";
 import { notFound } from "next/navigation";
 import { requireActiveUser } from "../../../lib/guards";
 import { prisma } from "../../../lib/prisma";

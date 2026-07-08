@@ -1,4 +1,4 @@
-import { UserStatus } from "@prisma/client";
+import { UserStatus } from "@/prisma-client";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "../../../../../auth";
 import { ProblemWorkspace } from "../../../../../components/practice/problem-workspace";

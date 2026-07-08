@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "@/prisma-client";
 import { prisma } from "../../../../lib/prisma";
 import { requireAdmin } from "../../../../lib/guards";
 import {

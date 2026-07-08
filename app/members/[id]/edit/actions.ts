@@ -1,7 +1,7 @@
 "use server";
 
 import { del, put } from "@vercel/blob";
-import { Role, UserStatus } from "@prisma/client";
+import { Role, UserStatus } from "@/prisma-client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "../../../../auth";

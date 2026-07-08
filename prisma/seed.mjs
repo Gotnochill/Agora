@@ -1,8 +1,17 @@
-const fs = require("node:fs");
-const path = require("node:path");
-const { PrismaClient } = require("@prisma/client");
+import fs from "node:fs";
+import path from "node:path";
+import { randomUUID } from "node:crypto";
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
+import { PrismaClient } from "../lib/generated/prisma/client.ts";
+import { createPrismaAdapter } from "../lib/prisma-adapter.ts";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
+
+// Seed data helpers are still CommonJS; load them through createRequire so this
+// ESM entrypoint can consume them without converting every module.
 const { buildStressTests } = require("./hidden-stress-tests");
-const { randomUUID } = require("node:crypto");
 const { additionalPracticeProblems, practiceOrderSlugs } = require("./practice-problem-batch");
 const {
   CONTEST_TWO_SLUG,
@@ -15,7 +24,7 @@ const {
   buildContestThreeStressTests,
 } = require("./contest-problem-set-3");
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ adapter: createPrismaAdapter(process.env.DATABASE_URL) });
 
 const SOLUTIONS_DIR = path.join(__dirname, "..", "scripts", "reference-solutions");
 const REFERENCE_SOLUTION_EXTENSIONS = {

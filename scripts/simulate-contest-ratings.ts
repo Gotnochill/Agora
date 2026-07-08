@@ -3,7 +3,7 @@
  * Run: npx tsx scripts/simulate-contest-ratings.ts
  * With DB: DATABASE_URL=... npx tsx scripts/simulate-contest-ratings.ts --db
  */
-import { ContestStatus, Role, SubmissionVerdict, UserStatus } from "@prisma/client";
+import { ContestStatus, Role, SubmissionVerdict, UserStatus } from "../lib/generated/prisma/client";
 import {
   computeRatingChanges,
   computeStandings,

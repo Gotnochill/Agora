@@ -1,4 +1,4 @@
-import { ApplicationStatus, UserStatus } from "@prisma/client";
+import { ApplicationStatus, UserStatus } from "@/prisma-client";
 import { redirect } from "next/navigation";
 import { auth } from "../../../auth";
 import { ensureRegistrationRecords } from "../../../lib/access";

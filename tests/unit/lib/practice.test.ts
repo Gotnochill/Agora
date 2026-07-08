@@ -1,4 +1,4 @@
-import { ProblemDifficulty } from "@prisma/client";
+import { ProblemDifficulty } from "@/prisma-client";
 import { describe, expect, it } from "vitest";
 import { groupProblemsByWeek, rankPracticeUsers } from "../../../lib/practice";
 

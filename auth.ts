@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { Role, UserStatus } from "@prisma/client";
+import { Role, UserStatus } from "@/prisma-client";
 import { prisma } from "./lib/prisma";
 import { ensureRegistrationRecords, syncUserAccess } from "./lib/access";
 

@@ -1,4 +1,4 @@
-import { SubmissionVerdict } from "@prisma/client";
+import { SubmissionVerdict } from "@/prisma-client";
 import { auth } from "../../auth";
 import { groupProblemsByWeek, rankPracticeUsers } from "../../lib/practice";
 import { prisma } from "../../lib/prisma";

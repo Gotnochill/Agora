@@ -1,4 +1,4 @@
-import { ContestStatus } from "@prisma/client";
+import { ContestStatus } from "@/prisma-client";
 import { contestPhase, formatContestTiming } from "../../lib/contest";
 import { prisma } from "../../lib/prisma";
 

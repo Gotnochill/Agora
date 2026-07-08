@@ -1,4 +1,4 @@
-import { ApplicationStatus } from "@prisma/client";
+import { ApplicationStatus } from "@/prisma-client";
 import { dateFormatter, parseAnswers } from "../../../../lib/cohorts";
 import { requireAdmin } from "../../../../lib/guards";
 import { prisma } from "../../../../lib/prisma";

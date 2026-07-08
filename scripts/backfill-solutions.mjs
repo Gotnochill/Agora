@@ -1,13 +1,14 @@
 // Backfills each Problem's reference solutions from scripts/reference-solutions/<slug>.<ext>
-// into the live DB. Idempotent. Run: node --env-file=.env.local scripts/backfill-solutions.mjs
+// into the live DB. Idempotent. Run: tsx --env-file=.env.local scripts/backfill-solutions.mjs
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../lib/generated/prisma/client.ts";
+import { createPrismaAdapter } from "../lib/prisma-adapter.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const solutionsDir = join(here, "reference-solutions");
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ adapter: createPrismaAdapter(process.env.DATABASE_URL) });
 const referenceSolutionExtensions = {
   python: "py",
   cpp: "cpp",

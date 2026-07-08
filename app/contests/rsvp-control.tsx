@@ -1,4 +1,4 @@
-import { UserStatus } from "@prisma/client";
+import { UserStatus } from "@/prisma-client";
 import { cancelContestRsvp, rsvpToContest } from "./[slug]/actions";
 
 type ContestRsvpControlProps = {
