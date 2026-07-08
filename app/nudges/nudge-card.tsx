@@ -23,7 +23,7 @@ type NudgeRecord = {
   title: string;
   message: string | null;
   link: string | null;
-  status: import("@prisma/client").NudgeStatus;
+  status: import("@/prisma-client").NudgeStatus;
   createdAt: Date;
   completedAt: Date | null;
   sender: NudgeUser;
