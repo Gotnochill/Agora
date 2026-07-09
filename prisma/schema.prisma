@@ -251,10 +251,12 @@ model Event {
   endsAt      DateTime?
   published   Boolean  @default(true)
   createdById String?
+  contestId   String?  @unique
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   creator User?       @relation("EventCreator", fields: [createdById], references: [id])
+  contest Contest?    @relation("ContestEvent", fields: [contestId], references: [id], onDelete: Cascade)
   rsvps   EventRsvp[]
 
   @@index([published, startsAt])
@@ -491,6 +493,7 @@ model Contest {
   updatedAt   DateTime      @updatedAt
 
   creator       User?                 @relation("ContestCreator", fields: [createdById], references: [id])
+  event         Event?                @relation("ContestEvent")
   problems      ContestProblem[]
   registrations ContestRegistration[]
   submissions   ContestSubmission[]
