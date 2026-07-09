@@ -9,6 +9,7 @@ import {
   contestSchema,
   DEFAULT_CONTEST_RATING,
   parseContestDate,
+  personalContestStart,
   syncContestRatingBadges,
   tierForRating,
 } from "../../../../lib/contest";
@@ -206,7 +207,10 @@ export async function finalizeContest(formData: FormData) {
   }
 
   const startTimesByUser = new Map(
-    contest.registrations.map((registration) => [registration.userId, registration.createdAt]),
+    contest.registrations.map((registration) => [
+      registration.userId,
+      personalContestStart(contest, registration.createdAt),
+    ]),
   );
   const standings = computeStandings(contest.submissions, contest.startsAt, startTimesByUser);
   const standingByUser = new Map(standings.map((row) => [row.userId, row]));
