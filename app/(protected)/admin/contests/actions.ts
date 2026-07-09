@@ -101,6 +101,9 @@ export async function publishContest(formData: FormData) {
       id: true,
       slug: true,
       title: true,
+      description: true,
+      startsAt: true,
+      endsAt: true,
       status: true,
       _count: { select: { problems: true } },
     },
@@ -117,6 +120,29 @@ export async function publishContest(formData: FormData) {
     data: { status: ContestStatus.PUBLISHED },
   });
 
+  // Mirror the contest onto the Events tab. Upserting on the unique contestId
+  // link keeps a single event in sync and never duplicates it on re-publish.
+  await prisma.event.upsert({
+    where: { contestId: contest.id },
+    update: {
+      title: contest.title,
+      description: contest.description,
+      startsAt: contest.startsAt,
+      endsAt: contest.endsAt,
+      published: true,
+    },
+    create: {
+      title: contest.title,
+      description: contest.description,
+      location: "Online",
+      startsAt: contest.startsAt,
+      endsAt: contest.endsAt,
+      published: true,
+      createdById: admin.id,
+      contestId: contest.id,
+    },
+  });
+
   // Announce a contest only the first time it leaves DRAFT, so re-publishing or
   // idempotent status writes never spam the feed with duplicates.
   if (!wasPublished) {
@@ -130,6 +156,7 @@ export async function publishContest(formData: FormData) {
 
   revalidatePath("/contests");
   revalidatePath(`/contests/${contest.slug}`);
+  revalidatePath("/events");
   revalidatePath("/admin/contests");
   revalidatePath(`/admin/contests/${contestId}`);
 }
