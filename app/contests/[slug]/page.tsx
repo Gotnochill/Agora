@@ -97,14 +97,16 @@ export default async function ContestDetailPage({
         ) : null}
 
         {searchParams?.error === "register" ? (
-          <div className="form-message error">Register for this contest before solving problems.</div>
+          <div className="form-message error">
+            Register for this contest before solving problems.
+          </div>
         ) : null}
 
         {phase === "upcoming" ? (
           <div className="form-message">
-            This contest hasn&apos;t started yet. It opens{" "}
-            {formatContestInstant(contest.startsAt)}. Register now and your{" "}
-            {contestDurationMinutes(contest)}-minute timer starts automatically when it opens.
+            This contest hasn&apos;t started yet. It opens {formatContestInstant(contest.startsAt)}.
+            Register now and your {contestDurationMinutes(contest)}-minute timer starts
+            automatically when it opens.
           </div>
         ) : null}
 
