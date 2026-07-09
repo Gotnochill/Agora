@@ -1009,7 +1009,7 @@ async function main() {
     update: {
       title: "ShardUp Contest #3",
       description:
-        "A one-hour, three-problem sprint that starts Saturday at 8:00 PM IST. The three problems escalate in difficulty (A < B < C) and are revealed only when the contest opens. Register during the window, then race your personal 60-minute timer.",
+        "A one-hour, three-problem sprint that starts Saturday at 8:00 PM IST. The three problems escalate in difficulty (A < B < C) and are revealed only when the contest opens. Register anytime before it starts — your personal 60-minute timer begins the moment it goes live.",
       startsAt: new Date("2026-07-11T14:30:00.000Z"),
       endsAt: new Date("2026-07-11T15:30:00.000Z"),
       durationMinutes: 60,
@@ -1018,7 +1018,7 @@ async function main() {
       slug: CONTEST_THREE_SLUG,
       title: "ShardUp Contest #3",
       description:
-        "A one-hour, three-problem sprint that starts Saturday at 8:00 PM IST. The three problems escalate in difficulty (A < B < C) and are revealed only when the contest opens. Register during the window, then race your personal 60-minute timer.",
+        "A one-hour, three-problem sprint that starts Saturday at 8:00 PM IST. The three problems escalate in difficulty (A < B < C) and are revealed only when the contest opens. Register anytime before it starts — your personal 60-minute timer begins the moment it goes live.",
       startsAt: new Date("2026-07-11T14:30:00.000Z"),
       endsAt: new Date("2026-07-11T15:30:00.000Z"),
       durationMinutes: 60,
