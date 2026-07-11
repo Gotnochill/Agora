@@ -13,7 +13,7 @@ export default function CreateEventModal({
 }: Readonly<{ error?: string; returnTo: string }>) {
   return (
     <div className="modal-backdrop" id="create-event">
-      <section className="badge-create-modal" aria-label="Create a new event">
+      <section className="badge-create-modal" aria-label="Create a new event" data-lenis-prevent>
         <a className="modal-close" href={returnTo} aria-label="Close">
           x
         </a>
