@@ -2010,10 +2010,16 @@ body.is-resizing-panes {
 
 .member-card {
   padding: 18px;
+  border: 2px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--shadow);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .member-card:hover {
-  background: var(--surface-hover);
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0 var(--shadow);
 }
 
 .member-card.medal-gold {
