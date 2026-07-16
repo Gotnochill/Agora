@@ -237,6 +237,11 @@ export function ProblemWorkspace({
     localStorage.setItem(draftKey(draftScope, language), value);
   }
 
+  function handleResetCode() {
+    setCode(initialCodeByLanguage?.[language] ?? starterCode[language] ?? "");
+    localStorage.removeItem(draftKey(draftScope, language));
+  }
+
   function buildFormData() {
     if (!formRef.current) {
       return null;
@@ -467,7 +472,12 @@ export function ProblemWorkspace({
             <div className="code-editor-shell">
               <div className="code-editor-toolbar">
                 <span>Code</span>
-                <span>{activeLanguageLabel}</span>
+                <span className="code-editor-toolbar-actions">
+                  <span>{activeLanguageLabel}</span>
+                  <button type="button" onClick={handleResetCode} disabled={isRunning}>
+                    Reset
+                  </button>
+                </span>
               </div>
               <div className="code-editor-body">
                 <CodeMirror
