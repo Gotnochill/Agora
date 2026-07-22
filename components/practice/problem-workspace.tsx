@@ -102,6 +102,7 @@ const draftKey = (scope: string, language: string) => `shardup:draft:${scope}:${
 const splitKey = "shardup:practice-split";
 
 // Keep the resizable split within sane bounds so neither pane collapses.
+const DEFAULT_SPLIT = 0.45;
 const MIN_SPLIT = 0.25;
 const MAX_SPLIT = 0.75;
 
@@ -169,7 +170,7 @@ export function ProblemWorkspace({
   const [error, setError] = useState<string | null>(null);
   const [runningLanguage, setRunningLanguage] = useState("python");
   const [ephemeralSubmissions, setEphemeralSubmissions] = useState<Submission[]>([]);
-  const [split, setSplit] = useState(0.5);
+  const [split, setSplit] = useState(DEFAULT_SPLIT);
 
   const workspaceRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);

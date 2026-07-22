@@ -1399,6 +1399,7 @@ a.notification-row:hover {
   flex-direction: column;
   height: calc(100vh - 132px);
   min-height: 520px;
+  padding-inline: clamp(16px, 1.75vw, 24px);
   overflow: hidden;
 }
 
@@ -1541,13 +1542,13 @@ a.notification-row:hover {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding-left: clamp(20px, 3vw, 36px);
+  padding-left: clamp(12px, 1.5vw, 20px);
 }
 
 .practice-divider {
-  flex: 0 0 7px;
+  flex: 0 0 5px;
   align-self: stretch;
-  margin: 0 clamp(6px, 1vw, 14px);
+  margin: 0 clamp(4px, 0.5vw, 8px);
   border-left: 1px solid var(--line);
   border-right: 1px solid var(--line);
   background: transparent;
