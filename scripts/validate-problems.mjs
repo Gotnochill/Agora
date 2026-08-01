@@ -131,6 +131,10 @@ try {
           input: test.input,
           encoding: "utf8",
           timeout: Math.max(5000, problem.timeLimitMs + 3000),
+          // Node defaults to 1 MB, which silently truncates large answers and
+          // reports them as mismatches. Stay above the judge's own output limit
+          // so oversized answers surface as real diffs instead of buffer errors.
+          maxBuffer: 8 * 1024 * 1024,
         });
 
         if (run.status !== 0) {

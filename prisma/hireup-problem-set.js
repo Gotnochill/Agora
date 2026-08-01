@@ -54,7 +54,7 @@ const bestDispatchHub = {
   title: "Best Dispatch Hub",
   statement:
     "Uber operates in a city whose road network forms a tree. There are N intersections numbered 0 through N-1 and exactly N-1 bidirectional roads. Every intersection is reachable from every other intersection.\n\nEach road connects intersections u and v and has a positive travel time w. If a driver dispatch hub is placed at intersection r, its dispatch cost is the sum of the shortest travel times from r to all N intersections, including a travel time of 0 from r to itself.\n\nFor every possible hub location r, compute its dispatch cost.\n\nInput format:\n- First line: N\n- Next N-1 lines: three integers u, v, and w describing a bidirectional road\n\nPrint N space-separated integers. The value at index r must be the dispatch cost when the hub is placed at intersection r. Use 64-bit arithmetic.",
-  constraints: "1 <= N <= 2 * 10^5\n0 <= u, v < N\n1 <= w <= 10^6",
+  constraints: "1 <= N <= 5 * 10^4\n0 <= u, v < N\n1 <= w <= 10^6",
   tags: ["Tree", "Dynamic Programming", "Rerooting", "DFS", "Uber", "HireUp"],
   difficulty: "HARD",
   timeLimitMs: 3000,
@@ -77,6 +77,11 @@ const bestDispatchHub = {
 // and independently verified against the reference solutions.
 function buildHireupStressTests() {
   const bigN = 200_000;
+  // Best Dispatch Hub prints one cost per intersection, so its answer grows with
+  // N. Cap it well under the judge's 2 MB output limit (lib/judge/piston.ts) —
+  // otherwise a correct solution would have its output truncated and be marked
+  // wrong. At 50k nodes an O(N^2) solution still times out comfortably.
+  const treeN = 50_000;
 
   // A: moving one large group from the first zone to the last makes every driver
   // cross every boundary.
@@ -100,20 +105,20 @@ function buildHireupStressTests() {
   // B: a long chain forces linear-time traversal and reroot propagation. For a
   // node r, the sum is 1 + ... + r plus 1 + ... + (N-1-r).
   const bChain = {
-    input: weightedChain(bigN, 1),
-    expectedOutput: sequenceLine(bigN, (root) => {
+    input: weightedChain(treeN, 1),
+    expectedOutput: sequenceLine(treeN, (root) => {
       const left = (root * (root + 1)) / 2;
-      const rightNodes = bigN - 1 - root;
+      const rightNodes = treeN - 1 - root;
       const right = (rightNodes * (rightNodes + 1)) / 2;
       return left + right;
     }),
   };
 
   // B: in a unit-weight star the center costs N-1 and every leaf costs 2N-3.
-  const starEdges = Array.from({ length: bigN - 1 }, (_, index) => `0 ${index + 1} 1`).join("\n");
+  const starEdges = Array.from({ length: treeN - 1 }, (_, index) => `0 ${index + 1} 1`).join("\n");
   const bStar = {
-    input: `${bigN}\n${starEdges}\n`,
-    expectedOutput: `${bigN - 1} ${repeatValues(bigN - 1, 2 * bigN - 3)}`,
+    input: `${treeN}\n${starEdges}\n`,
+    expectedOutput: `${treeN - 1} ${repeatValues(treeN - 1, 2 * treeN - 3)}`,
   };
 
   return {
