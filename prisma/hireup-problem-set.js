@@ -1,7 +1,6 @@
 // Problems for the "HireUp Online Assessment" — the first round of the HireUp
-// mock-hiring event. The pair escalates from a prefix-imbalance observation to
-// weighted tree rerooting, giving candidates an approachable entry point and a
-// stronger second problem within the assessment window.
+// mock-hiring event. The set escalates across three problems: a stack-based
+// profiler warm-up, a prefix-imbalance observation, and weighted tree rerooting.
 //
 // Reference solutions live in scripts/reference-solutions/<slug>.{py,cpp} and are
 // attached by prisma/seed.mjs. Stress-test outputs below are closed-form and
@@ -25,7 +24,69 @@ function weightedChain(nodes, weight) {
   return `${lines.join("\n")}\n`;
 }
 
-// --- Problem A: Driver Rebalancing Across City Corridors ---------------------
+// Profiler log where service 0 re-enters itself `depth` times before unwinding.
+// Every time unit in [0, 2 * depth) belongs to service 0, so its exclusive time
+// is exactly 2 * depth.
+function nestedCallLog(depth) {
+  const lines = [`1 ${depth * 2}`];
+  for (let index = 0; index < depth; index += 1) {
+    lines.push(`0:start:${index}`);
+  }
+  for (let index = 0; index < depth; index += 1) {
+    lines.push(`0:end:${depth + index}`);
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+// Profiler log of back-to-back (never nested) calls cycling through services.
+// Each call covers exactly two time units, so a service called c times scores 2c.
+function sequentialCallLog(services, calls) {
+  const lines = [`${services} ${calls * 2}`];
+  for (let index = 0; index < calls; index += 1) {
+    const serviceId = index % services;
+    lines.push(`${serviceId}:start:${2 * index}`);
+    lines.push(`${serviceId}:end:${2 * index + 1}`);
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+// --- Problem A: Service Call Profiler ----------------------------------------
+const serviceCallProfiler = {
+  slug: "service-call-profiler",
+  title: "Service Call Profiler",
+  statement:
+    'Uber runs a profiler over a backend that executes on a single thread. A service can call other services, and a call may even re-enter the same service, so calls nest like a call stack: when one service starts, whichever service was running is paused and resumes only once the inner call finishes.\n\nYou are given the profiler log in execution order. Each entry has the form "<id>:start:<timestamp>" or "<id>:end:<timestamp>".\n\n- "<id>:start:<t>" means service id began running at the very start of time unit t.\n- "<id>:end:<t>" means service id finished at the very end of time unit t, so it was still running for the whole of time unit t.\n\nTimestamps are non-decreasing, every start has a matching end, and the log is consistent with a single thread.\n\nReport the exclusive time of every service: how many time units it spent running itself, not counting time while it was paused waiting on a nested call.\n\nInput format:\n- First line: two integers N and M, the number of services and the number of log entries\n- Next M lines: one log entry each\n\nPrint N space-separated integers, where the value at index i is the exclusive time of service i. The answer can exceed a 32-bit integer.',
+  constraints: "1 <= N <= 100\n2 <= M <= 10^5, and M is even\n0 <= id < N\n0 <= timestamp <= 10^9",
+  tags: ["Stack", "Simulation", "String", "Uber", "HireUp"],
+  difficulty: "EASY",
+  timeLimitMs: 2000,
+  samples: [
+    { input: "2 4\n0:start:0\n1:start:2\n1:end:5\n0:end:6\n", expectedOutput: "3 4\n" },
+    {
+      input: "1 6\n0:start:0\n0:start:2\n0:end:5\n0:start:6\n0:end:6\n0:end:7\n",
+      expectedOutput: "8\n",
+    },
+  ],
+  hidden: [
+    { input: "1 2\n0:start:0\n0:end:0\n", expectedOutput: "1\n" },
+    {
+      input: "3 6\n0:start:0\n1:start:3\n2:start:5\n2:end:8\n1:end:10\n0:end:12\n",
+      expectedOutput: "5 4 4\n",
+    },
+    { input: "2 4\n0:start:0\n0:end:4\n1:start:5\n1:end:9\n", expectedOutput: "5 5\n" },
+    {
+      input:
+        "2 8\n0:start:0\n1:start:1\n1:end:2\n0:start:3\n0:end:4\n1:start:5\n1:end:6\n0:end:7\n",
+      expectedOutput: "4 4\n",
+    },
+    {
+      input: "2 4\n0:start:0\n1:start:500000000\n1:end:999999999\n0:end:1000000000\n",
+      expectedOutput: "500000001 500000000\n",
+    },
+  ],
+};
+
+// --- Problem B: Driver Rebalancing Across City Corridors ---------------------
 const driverRebalancing = {
   slug: "driver-rebalancing",
   title: "Driver Rebalancing Across City Corridors",
@@ -48,7 +109,7 @@ const driverRebalancing = {
   ],
 };
 
-// --- Problem B: Best Dispatch Hub ---------------------------------------------
+// --- Problem C: Best Dispatch Hub ---------------------------------------------
 const bestDispatchHub = {
   slug: "best-dispatch-hub",
   title: "Best Dispatch Hub",
@@ -82,29 +143,50 @@ function buildHireupStressTests() {
   // otherwise a correct solution would have its output truncated and be marked
   // wrong. At 50k nodes an O(N^2) solution still times out comfortably.
   const treeN = 50_000;
+  const logCalls = 50_000;
 
-  // A: moving one large group from the first zone to the last makes every driver
+  // A: 50k nested re-entries of one service. This punishes a recursive walk
+  // (stack overflow) and any solution that rescans the whole call stack per
+  // entry, which degrades to O(M^2); the intended single pass stays linear.
+  const aDeepNesting = {
+    input: nestedCallLog(logCalls),
+    expectedOutput: `${2 * logCalls}\n`,
+  };
+
+  // A: 50k back-to-back calls alternating between two services, two units each.
+  const aFlatSequential = {
+    input: sequentialCallLog(2, logCalls),
+    expectedOutput: `${logCalls} ${logCalls}\n`,
+  };
+
+  // A: the same volume spread across 100 services, so each is called 500 times.
+  const aManyServices = {
+    input: sequentialCallLog(100, logCalls),
+    expectedOutput: repeatValues(100, (2 * logCalls) / 100),
+  };
+
+  // B: moving one large group from the first zone to the last makes every driver
   // cross every boundary.
-  const aLongTransfer = {
+  const bLongTransfer = {
     input: `${bigN}\n100000000 ${repeatValues(bigN - 1, 0)}${repeatValues(bigN - 1, 0).trim()} 100000000\n`,
     expectedOutput: `${(bigN - 1) * 100_000_000}\n`,
   };
 
-  // A: each adjacent pair starts with its driver in the left zone and needs it
+  // B: each adjacent pair starts with its driver in the left zone and needs it
   // in the right zone, so exactly half the boundaries carry one driver.
-  const aAlternating = {
+  const bAlternating = {
     input: `${bigN}\n${sequenceLine(bigN, (index) => (index % 2 === 0 ? 1 : 0))}${sequenceLine(bigN, (index) => (index % 2 === 0 ? 0 : 1))}`,
     expectedOutput: `${bigN / 2}\n`,
   };
 
-  const aAlreadyBalanced = {
+  const bAlreadyBalanced = {
     input: `${bigN}\n${repeatValues(bigN, 1000000)}${repeatValues(bigN, 1000000)}`,
     expectedOutput: "0\n",
   };
 
-  // B: a long chain forces linear-time traversal and reroot propagation. For a
+  // C: a long chain forces linear-time traversal and reroot propagation. For a
   // node r, the sum is 1 + ... + r plus 1 + ... + (N-1-r).
-  const bChain = {
+  const cChain = {
     input: weightedChain(treeN, 1),
     expectedOutput: sequenceLine(treeN, (root) => {
       const left = (root * (root + 1)) / 2;
@@ -114,20 +196,21 @@ function buildHireupStressTests() {
     }),
   };
 
-  // B: in a unit-weight star the center costs N-1 and every leaf costs 2N-3.
+  // C: in a unit-weight star the center costs N-1 and every leaf costs 2N-3.
   const starEdges = Array.from({ length: treeN - 1 }, (_, index) => `0 ${index + 1} 1`).join("\n");
-  const bStar = {
+  const cStar = {
     input: `${treeN}\n${starEdges}\n`,
     expectedOutput: `${treeN - 1} ${repeatValues(treeN - 1, 2 * treeN - 3)}`,
   };
 
   return {
-    "driver-rebalancing": [aLongTransfer, aAlternating, aAlreadyBalanced],
-    "best-dispatch-hub": [bChain, bStar],
+    "service-call-profiler": [aDeepNesting, aFlatSequential, aManyServices],
+    "driver-rebalancing": [bLongTransfer, bAlternating, bAlreadyBalanced],
+    "best-dispatch-hub": [cChain, cStar],
   };
 }
 
-const hireupProblems = [driverRebalancing, bestDispatchHub];
+const hireupProblems = [serviceCallProfiler, driverRebalancing, bestDispatchHub];
 
 module.exports = {
   HIREUP_OA_SLUG,

@@ -1039,7 +1039,7 @@ async function main() {
   });
 
   // HireUp Online Assessment: the first round of the HireUp mock-hiring event.
-  // Two escalating problems (A < B) in the style of recent Uber/Amazon/Google
+  // Three escalating problems (A < B < C) in the style of recent Uber/Amazon/Google
   // OAs. Seeded unpublished so they only appear inside the OA contest, with
   // reference solutions for admins.
   const hireupStress = buildHireupStressTests();
