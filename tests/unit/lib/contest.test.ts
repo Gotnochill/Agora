@@ -17,8 +17,19 @@ function submission(
   contestProblemId: string,
   verdict: SubmissionVerdict,
   createdAt: Date,
+  passedCount = verdict === SubmissionVerdict.ACCEPTED ? 1 : 0,
+  totalCount = 1,
 ) {
-  return { userId, contestProblemId, verdict, createdAt };
+  return {
+    userId,
+    contestProblemId,
+    verdict,
+    passedCount,
+    totalCount,
+    earnedPoints: passedCount,
+    possiblePoints: totalCount,
+    createdAt,
+  };
 }
 
 describe("computeStandings", () => {
@@ -57,6 +68,43 @@ describe("computeStandings", () => {
     );
 
     expect(standings).toEqual([]);
+  });
+
+  it("uses only the best partial score for each problem", () => {
+    const standings = computeStandings(
+      [
+        submission(
+          "alice",
+          "p1",
+          SubmissionVerdict.WRONG_ANSWER,
+          new Date("2026-07-01T10:05:00.000Z"),
+          3,
+          10,
+        ),
+        submission(
+          "alice",
+          "p1",
+          SubmissionVerdict.WRONG_ANSWER,
+          new Date("2026-07-01T10:20:00.000Z"),
+          7,
+          10,
+        ),
+        submission(
+          "bob",
+          "p1",
+          SubmissionVerdict.WRONG_ANSWER,
+          new Date("2026-07-01T10:10:00.000Z"),
+          6,
+          10,
+        ),
+      ],
+      startsAt,
+    );
+
+    expect(standings).toEqual([
+      expect.objectContaining({ userId: "alice", score: 70, solvedCount: 0, rank: 1 }),
+      expect.objectContaining({ userId: "bob", score: 60, solvedCount: 0, rank: 2 }),
+    ]);
   });
 
   it("uses participant start times for demo contest penalties", () => {

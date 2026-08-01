@@ -36,7 +36,17 @@ function sub(
   verdict: SubmissionVerdict,
   minutes: number,
 ): ContestSubmissionRow {
-  return { userId, contestProblemId, verdict, createdAt: at(minutes) };
+  const accepted = verdict === SubmissionVerdict.ACCEPTED;
+  return {
+    userId,
+    contestProblemId,
+    verdict,
+    passedCount: accepted ? 1 : 0,
+    totalCount: 1,
+    earnedPoints: accepted ? 1 : 0,
+    possiblePoints: 1,
+    createdAt: at(minutes),
+  };
 }
 
 /** Scripted contest: Alice solves both (with a WA on B), Bob solves A fast, Cara solves B after WA, Dan DNF. */

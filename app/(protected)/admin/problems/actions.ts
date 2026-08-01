@@ -10,6 +10,8 @@ type RunResult =
       verdict: string;
       passedCount: number;
       totalCount: number;
+      earnedPoints: number;
+      possiblePoints: number;
       runtimeMs: number | null;
       failureMessage?: string | null;
     }
@@ -40,7 +42,10 @@ export async function runReferenceSolution(slug: string, language?: string): Pro
         select: { language: true, code: true },
       },
       timeLimitMs: true,
-      testCases: { orderBy: { order: "asc" }, select: { input: true, expectedOutput: true } },
+      testCases: {
+        orderBy: { order: "asc" },
+        select: { input: true, expectedOutput: true, points: true },
+      },
     },
   });
 

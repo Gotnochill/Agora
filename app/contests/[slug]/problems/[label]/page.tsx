@@ -115,6 +115,8 @@ export default async function ContestProblemPage({
       verdict: true,
       passedCount: true,
       totalCount: true,
+      earnedPoints: true,
+      possiblePoints: true,
       runtimeMs: true,
       failureMessage: true,
     },

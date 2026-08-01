@@ -1051,12 +1051,14 @@ async function main() {
         input: testCase.input,
         expectedOutput: testCase.expectedOutput,
         isSample: true,
+        points: testCase.points ?? 1,
         order: index,
       })),
       ...[...problem.hidden, ...(hireupStress[problem.slug] ?? [])].map((testCase, index) => ({
         input: testCase.input,
         expectedOutput: testCase.expectedOutput,
         isSample: false,
+        points: testCase.points ?? 1,
         order: problem.samples.length + index,
       })),
     ];
@@ -1105,7 +1107,7 @@ async function main() {
     hireupProblemIds.push(savedProblem.id);
   }
 
-  // 1 August 8:00 PM IST (14:30 UTC), one-hour window, 60-minute personal timer.
+  // 1 August 8:00 PM IST (14:30 UTC), 90-minute window and personal timer.
   // Seeded PUBLISHED directly (never through the admin publish action) so it is
   // surfaced only inside the HireUp hub and is not mirrored onto the Events tab.
   // `status` is owned by the app after seeding, so it is only set on create.
@@ -1114,19 +1116,19 @@ async function main() {
     update: {
       title: "HireUp Online Assessment",
       description:
-        "Online assessment for the HireUp mock hiring. Solve the problems within your 60-minute timer.",
+        "Online assessment for the HireUp mock hiring. Solve the problems within your 90-minute timer.",
       startsAt: new Date("2026-08-01T14:30:00.000Z"),
-      endsAt: new Date("2026-08-01T15:30:00.000Z"),
-      durationMinutes: 60,
+      endsAt: new Date("2026-08-01T16:00:00.000Z"),
+      durationMinutes: 90,
     },
     create: {
       slug: HIREUP_OA_SLUG,
       title: "HireUp Online Assessment",
       description:
-        "Online assessment for the HireUp mock hiring. Solve the problems within your 60-minute timer.",
+        "Online assessment for the HireUp mock hiring. Solve the problems within your 90-minute timer.",
       startsAt: new Date("2026-08-01T14:30:00.000Z"),
-      endsAt: new Date("2026-08-01T15:30:00.000Z"),
-      durationMinutes: 60,
+      endsAt: new Date("2026-08-01T16:00:00.000Z"),
+      durationMinutes: 90,
       status: "PUBLISHED",
     },
     select: { id: true },

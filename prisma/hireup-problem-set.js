@@ -1,12 +1,7 @@
 // Problems for the "HireUp Online Assessment" — the first round of the HireUp
-// mock-hiring event. Original problems written in the style of recent (last ~2
-// years) Uber / Amazon / Google online assessments, customized so they are not
-// verbatim copies of any company's proprietary question.
-//
-// Both are HARD and target the tier top companies actually test: A is a 2D grid
-// DP carrying an extra "skip budget" state; B is a shortest-path problem solved
-// with Dijkstra over an augmented (node, upgrades-used) state. Seeded unpublished
-// so they only appear inside the OA contest.
+// mock-hiring event. The pair escalates from a prefix-imbalance observation to
+// weighted tree rerooting, giving candidates an approachable entry point and a
+// stronger second problem within the assessment window.
 //
 // Reference solutions live in scripts/reference-solutions/<slug>.{py,cpp} and are
 // attached by prisma/seed.mjs. Stress-test outputs below are closed-form and
@@ -14,79 +9,87 @@
 
 const HIREUP_OA_SLUG = "hireup-oa";
 
-function onesGrid(rows, cols, k) {
-  const row = `${new Array(cols).fill(1).join(" ")}\n`;
-  return `${rows} ${cols} ${k}\n${row.repeat(rows)}`;
+function repeatValues(count, value) {
+  return `${new Array(count).fill(value).join(" ")}\n`;
 }
 
-// Closed form for an all-ones R x C grid: a monotone path visits R + C - 1 cells;
-// the start and end must be paid, so at most (R + C - 3) interior cells can be
-// skipped. Cost = (cells) - min(k, interior).
-function onesGridAnswer(rows, cols, k) {
-  const cells = rows + cols - 1;
-  const interior = Math.max(0, cells - 2);
-  return cells - Math.min(k, interior);
+function sequenceLine(count, mapper) {
+  return `${Array.from({ length: count }, (_, index) => mapper(index)).join(" ")}\n`;
 }
 
-function chainGraph(nodes, edges, k, weight) {
-  const lines = [`${nodes} ${edges} ${k}`];
-  for (let i = 1; i <= edges; i += 1) {
-    lines.push(`${i} ${i + 1} ${weight}`);
+function weightedChain(nodes, weight) {
+  const lines = [String(nodes)];
+  for (let node = 1; node < nodes; node += 1) {
+    lines.push(`${node - 1} ${node} ${weight}`);
   }
   return `${lines.join("\n")}\n`;
 }
 
-// --- Problem A: Grid Delivery With Skips --------------------------------------
-// Amazon/Google-flavored grid DP. The classic "minimum path sum" becomes a 3D DP
-// once you can waive the cost of up to K cells: dp[i][j][k] = best cost to reach
-// (i, j) having used k waivers, transitioning from the top/left and optionally
-// skipping the current (non-corner) cell.
-const gridDeliverySkips = {
-  slug: "grid-delivery-skips",
-  title: "Grid Delivery With Skips",
+// --- Problem A: Driver Rebalancing Across City Corridors ---------------------
+const driverRebalancing = {
+  slug: "driver-rebalancing",
+  title: "Driver Rebalancing Across City Corridors",
   statement:
-    "A delivery robot must cross an R x C grid of positive tolls. It starts at the top-left cell (0, 0), ends at the bottom-right cell (R-1, C-1), and may move only one cell right or one cell down at a time. Normally it pays the toll printed on every cell it visits.\n\nThe robot carries K skip passes. Using a pass on a cell waives that cell's toll entirely. It may use at most K passes over the whole trip, at most one per cell, but it can never skip the start cell (0, 0) or the end cell (R-1, C-1) — those tolls are always paid.\n\nPrint the minimum total toll the robot must pay to get from the start to the end.\n\nInput format:\n- First line: R C K\n- Next R lines: C integers each, the grid tolls row by row\n\nPrint a single integer. The answer can exceed a 32-bit integer.",
-  constraints: "1 <= R, C <= 200\n0 <= K <= 30\n1 <= toll[i][j] <= 10^9",
-  tags: ["Dynamic Programming", "Matrix", "Grid", "Amazon", "Google", "HireUp"],
-  difficulty: "HARD",
-  timeLimitMs: 4000,
+    "A city has N zones arranged in a straight line and numbered 1 through N. Zone i currently has current[i] available drivers, while target[i] is the desired number of drivers in that zone.\n\nIn one move, you may move one driver from a zone to either adjacent zone. Moving a driver across one zone boundary costs 1. A driver may cross several boundaries through several moves.\n\nThe total number of current drivers equals the total target, so it is always possible to reach the target distribution. Find the minimum total movement cost.\n\nInput format:\n- First line: N\n- Second line: N integers current[1], current[2], ..., current[N]\n- Third line: N integers target[1], target[2], ..., target[N]\n\nPrint a single integer: the minimum total movement cost. The answer can exceed a 32-bit integer.",
+  constraints:
+    "1 <= N <= 2 * 10^5\n0 <= current[i], target[i] <= 10^9\nsum(current) = sum(target) <= 10^13",
+  tags: ["Array", "Prefix Sum", "Greedy", "Uber", "HireUp"],
+  difficulty: "MEDIUM",
+  timeLimitMs: 2000,
   samples: [
-    { input: "2 2 1\n1 2\n3 4\n", expectedOutput: "5\n" },
-    { input: "2 2 0\n1 2\n3 4\n", expectedOutput: "7\n" },
+    { input: "4\n0 3 0 2\n1 1 2 1\n", expectedOutput: "3\n", points: 0 },
+    {
+      input: "5\n10 0 0 0 0\n0 0 0 0 10\n",
+      expectedOutput: "40\n",
+      points: 0,
+    },
   ],
   hidden: [
-    { input: "1 1 0\n5\n", expectedOutput: "5\n" },
-    { input: "3 3 0\n1 1 1\n1 1 1\n1 1 1\n", expectedOutput: "5\n" },
-    { input: "3 3 2\n1 1 1\n1 1 1\n1 1 1\n", expectedOutput: "3\n" },
-    { input: "2 3 1\n1 5 1\n1 5 9\n", expectedOutput: "11\n" },
+    { input: "1\n7\n7\n", expectedOutput: "0\n", points: 10 },
+    { input: "5\n1 2 3 4 5\n1 2 3 4 5\n", expectedOutput: "0\n", points: 10 },
+    {
+      input: "6\n5 0 4 0 0 3\n0 3 0 4 2 3\n",
+      expectedOutput: "15\n",
+      points: 20,
+    },
+    {
+      input: "3\n0 0 1000000000\n1000000000 0 0\n",
+      expectedOutput: "2000000000\n",
+      points: 15,
+    },
   ],
 };
 
-// --- Problem B: Network Upgrade Routing --------------------------------------
-// Google/Uber-flavored shortest path. From node 1 to node n in a directed
-// weighted graph, you may zero out the weight of at most K edges. Dijkstra over
-// (node, upgrades-used) states finds the cheapest route; report -1 if node n is
-// unreachable.
-const networkUpgradeRouting = {
-  slug: "network-upgrade-routing",
-  title: "Network Upgrade Routing",
+// --- Problem B: Best Dispatch Hub ---------------------------------------------
+const bestDispatchHub = {
+  slug: "best-dispatch-hub",
+  title: "Best Dispatch Hub",
   statement:
-    "A backbone network has n routers numbered 1..n and m one-way links. Link i sends traffic from router u to router v with latency w. You must route a stream from router 1 to router n along a sequence of links, paying the sum of the latencies you use.\n\nYou hold K upgrade credits. Spending a credit on a link makes its latency 0 for this route. You may spend at most K credits in total, at most one per link.\n\nPrint the minimum total latency of a route from router 1 to router n, or -1 if no route exists.\n\nInput format:\n- First line: n m K\n- Next m lines: u v w describing a directed link u -> v with latency w\n\nPrint a single integer. The answer can exceed a 32-bit integer.",
-  constraints: "1 <= n <= 10^5\n0 <= m <= 2*10^5\n0 <= K <= 10\n1 <= u, v <= n\n1 <= w <= 10^9",
-  tags: ["Graph", "Shortest Path", "Dijkstra", "Uber", "Google", "HireUp"],
+    "Uber operates in a city whose road network forms a tree. There are N intersections numbered 0 through N-1 and exactly N-1 bidirectional roads. Every intersection is reachable from every other intersection.\n\nEach road connects intersections u and v and has a positive travel time w. If a driver dispatch hub is placed at intersection r, its dispatch cost is the sum of the shortest travel times from r to all N intersections, including a travel time of 0 from r to itself.\n\nFor every possible hub location r, compute its dispatch cost.\n\nInput format:\n- First line: N\n- Next N-1 lines: three integers u, v, and w describing a bidirectional road\n\nPrint N space-separated integers. The value at index r must be the dispatch cost when the hub is placed at intersection r. Use 64-bit arithmetic.",
+  constraints: "1 <= N <= 2 * 10^5\n0 <= u, v < N\n1 <= w <= 10^6",
+  tags: ["Tree", "Dynamic Programming", "Rerooting", "DFS", "Uber", "HireUp"],
   difficulty: "HARD",
-  timeLimitMs: 4000,
+  timeLimitMs: 3000,
   samples: [
-    { input: "4 4 1\n1 2 5\n2 4 5\n1 3 1\n3 4 1\n", expectedOutput: "1\n" },
-    { input: "4 4 0\n1 2 5\n2 4 5\n1 3 1\n3 4 1\n", expectedOutput: "2\n" },
+    {
+      input: "4\n0 1 1\n0 2 1\n2 3 1\n",
+      expectedOutput: "4 6 4 6\n",
+      points: 0,
+    },
+    { input: "2\n0 1 7\n", expectedOutput: "7 7\n", points: 0 },
   ],
   hidden: [
-    { input: "3 1 2\n1 2 4\n", expectedOutput: "-1\n" },
-    { input: "1 0 0\n", expectedOutput: "0\n" },
-    { input: "3 2 2\n1 2 7\n2 3 9\n", expectedOutput: "0\n" },
+    { input: "1\n", expectedOutput: "0\n", points: 10 },
+    { input: "3\n0 1 2\n1 2 3\n", expectedOutput: "7 5 8\n", points: 15 },
     {
-      input: "5 5 1\n1 2 10\n2 5 10\n1 3 3\n3 4 3\n4 5 3\n",
-      expectedOutput: "6\n",
+      input: "5\n0 1 1\n0 2 2\n0 3 3\n0 4 4\n",
+      expectedOutput: "10 13 16 19 22\n",
+      points: 15,
+    },
+    {
+      input: "4\n0 1 1000000\n1 2 1000000\n2 3 1000000\n",
+      expectedOutput: "6000000 4000000 4000000 6000000\n",
+      points: 10,
     },
   ],
 };
@@ -94,45 +97,58 @@ const networkUpgradeRouting = {
 // Efficiency / stress tests. Inputs are large; expected outputs are closed-form
 // and independently verified against the reference solutions.
 function buildHireupStressTests() {
-  // A: all-ones grids at the size limit exercise the O(R * C * K) DP.
-  const aFull = {
-    input: onesGrid(200, 200, 0),
-    expectedOutput: `${onesGridAnswer(200, 200, 0)}\n`,
-  };
-  const aFullSkips = {
-    input: onesGrid(200, 200, 30),
-    expectedOutput: `${onesGridAnswer(200, 200, 30)}\n`,
-  };
-  const aMidSkips = {
-    input: onesGrid(150, 150, 30),
-    expectedOutput: `${onesGridAnswer(150, 150, 30)}\n`,
+  const bigN = 200_000;
+
+  // A: moving one large group from the first zone to the last makes every driver
+  // cross every boundary.
+  const aLongTransfer = {
+    input: `${bigN}\n100000000 ${repeatValues(bigN - 1, 0)}${repeatValues(bigN - 1, 0).trim()} 100000000\n`,
+    expectedOutput: `${(bigN - 1) * 100_000_000}\n`,
+    points: 20,
   };
 
-  // B: long chains 1 -> 2 -> ... force an efficient Dijkstra over the augmented
-  // state; a chain of e edges with weight w and k free edges costs (e - k) * w.
-  const bigNodes = 50_000;
-  const weight = 1_000_000_000;
+  // A: each adjacent pair starts with its driver in the left zone and needs it
+  // in the right zone, so exactly half the boundaries carry one driver.
+  const aAlternating = {
+    input: `${bigN}\n${sequenceLine(bigN, (index) => (index % 2 === 0 ? 1 : 0))}${sequenceLine(bigN, (index) => (index % 2 === 0 ? 0 : 1))}`,
+    expectedOutput: `${bigN / 2}\n`,
+    points: 15,
+  };
+
+  const aAlreadyBalanced = {
+    input: `${bigN}\n${repeatValues(bigN, 1000000)}${repeatValues(bigN, 1000000)}`,
+    expectedOutput: "0\n",
+    points: 10,
+  };
+
+  // B: a long chain forces linear-time traversal and reroot propagation. For a
+  // node r, the sum is 1 + ... + r plus 1 + ... + (N-1-r).
   const bChain = {
-    input: chainGraph(bigNodes, bigNodes - 1, 0, weight),
-    expectedOutput: `${(bigNodes - 1) * weight}\n`,
+    input: weightedChain(bigN, 1),
+    expectedOutput: sequenceLine(bigN, (root) => {
+      const left = (root * (root + 1)) / 2;
+      const rightNodes = bigN - 1 - root;
+      const right = (rightNodes * (rightNodes + 1)) / 2;
+      return left + right;
+    }),
+    points: 30,
   };
-  const bChainFree = {
-    input: chainGraph(bigNodes, bigNodes - 1, 10, weight),
-    expectedOutput: `${(bigNodes - 1 - 10) * weight}\n`,
-  };
-  // Chain that stops one short of node n -> node n is unreachable -> -1.
-  const bUnreachable = {
-    input: chainGraph(bigNodes, bigNodes - 2, 10, weight),
-    expectedOutput: "-1\n",
+
+  // B: in a unit-weight star the center costs N-1 and every leaf costs 2N-3.
+  const starEdges = Array.from({ length: bigN - 1 }, (_, index) => `0 ${index + 1} 1`).join("\n");
+  const bStar = {
+    input: `${bigN}\n${starEdges}\n`,
+    expectedOutput: `${bigN - 1} ${repeatValues(bigN - 1, 2 * bigN - 3)}`,
+    points: 20,
   };
 
   return {
-    "grid-delivery-skips": [aFull, aFullSkips, aMidSkips],
-    "network-upgrade-routing": [bChain, bChainFree, bUnreachable],
+    "driver-rebalancing": [aLongTransfer, aAlternating, aAlreadyBalanced],
+    "best-dispatch-hub": [bChain, bStar],
   };
 }
 
-const hireupProblems = [gridDeliverySkips, networkUpgradeRouting];
+const hireupProblems = [driverRebalancing, bestDispatchHub];
 
 module.exports = {
   HIREUP_OA_SLUG,

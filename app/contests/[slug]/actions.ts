@@ -13,6 +13,8 @@ type ContestPreviewResult = {
   verdict: string;
   passedCount: number;
   totalCount: number;
+  earnedPoints: number;
+  possiblePoints: number;
   runtimeMs: number | null;
   failureMessage?: string | null;
 };
@@ -156,7 +158,7 @@ export async function submitContestSolution(formData: FormData) {
           timeLimitMs: true,
           testCases: {
             orderBy: { order: "asc" },
-            select: { input: true, expectedOutput: true, isSample: true },
+            select: { input: true, expectedOutput: true, isSample: true, points: true },
           },
         },
       },
@@ -184,6 +186,10 @@ export async function submitContestSolution(formData: FormData) {
       language: parsed.data.language,
       code: parsed.data.code,
       totalCount: contestProblem.problem.testCases.length,
+      possiblePoints: contestProblem.problem.testCases.reduce(
+        (total, testCase) => total + testCase.points,
+        0,
+      ),
     },
     select: { id: true },
   });
@@ -207,6 +213,11 @@ export async function submitContestSolution(formData: FormData) {
         verdict: SubmissionVerdict.RUNTIME_ERROR,
         passedCount: 0,
         totalCount: contestProblem.problem.testCases.length,
+        earnedPoints: 0,
+        possiblePoints: contestProblem.problem.testCases.reduce(
+          (total, testCase) => total + testCase.points,
+          0,
+        ),
         failureMessage: failureMessageFromError(error),
       },
     });
@@ -275,7 +286,7 @@ export async function runContestSolution(formData: FormData): Promise<ContestPre
           testCases: {
             where: { isSample: true },
             orderBy: { order: "asc" },
-            select: { input: true, expectedOutput: true, isSample: true },
+            select: { input: true, expectedOutput: true, isSample: true, points: true },
           },
         },
       },
@@ -298,6 +309,11 @@ export async function runContestSolution(formData: FormData): Promise<ContestPre
       verdict: SubmissionVerdict.RUNTIME_ERROR,
       passedCount: 0,
       totalCount: contestProblem.problem.testCases.length,
+      earnedPoints: 0,
+      possiblePoints: contestProblem.problem.testCases.reduce(
+        (total, testCase) => total + testCase.points,
+        0,
+      ),
       runtimeMs: null,
       failureMessage: failureMessageFromError(error),
     };
@@ -309,6 +325,8 @@ function previewError(message: string): ContestPreviewResult {
     verdict: SubmissionVerdict.RUNTIME_ERROR,
     passedCount: 0,
     totalCount: 0,
+    earnedPoints: 0,
+    possiblePoints: 0,
     runtimeMs: null,
     failureMessage: message,
   };
@@ -340,7 +358,7 @@ export async function runContestPreview(formData: FormData): Promise<ContestPrev
       timeLimitMs: true,
       testCases: {
         orderBy: { order: "asc" },
-        select: { input: true, expectedOutput: true, isSample: true },
+        select: { input: true, expectedOutput: true, isSample: true, points: true },
       },
     },
   });
@@ -361,6 +379,8 @@ export async function runContestPreview(formData: FormData): Promise<ContestPrev
       verdict: SubmissionVerdict.RUNTIME_ERROR,
       passedCount: 0,
       totalCount: problem.testCases.length,
+      earnedPoints: 0,
+      possiblePoints: problem.testCases.reduce((total, testCase) => total + testCase.points, 0),
       runtimeMs: null,
       failureMessage: failureMessageFromError(error),
     };

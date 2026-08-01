@@ -36,6 +36,10 @@ export default async function ContestDetailPage({
           userId: true,
           contestProblemId: true,
           verdict: true,
+          passedCount: true,
+          totalCount: true,
+          earnedPoints: true,
+          possiblePoints: true,
           createdAt: true,
         },
       },
@@ -192,8 +196,11 @@ export default async function ContestDetailPage({
         <section className="practice-leaderboard" aria-labelledby="contest-standings-title">
           <div className="practice-leaderboard-header">
             <h2 id="contest-standings-title">Standings</h2>
-            <span>Solved · Time taken</span>
+            <span>Points · Solved · Time taken</span>
           </div>
+          <p className="nudge-meta">
+            Each problem is worth 100 points. Only your best submission per problem counts.
+          </p>
           {standings.length > 0 ? (
             <div className="leaderboard-list">
               {standings.map((entry) => (
@@ -201,13 +208,14 @@ export default async function ContestDetailPage({
                   <span className="leaderboard-rank">#{entry.rank}</span>
                   <span className="leaderboard-name">{entry.name}</span>
                   <span className="leaderboard-score">
-                    {entry.solvedCount} · {entry.penalty} min
+                    {entry.score}/{contest.problems.length * 100} · {entry.solvedCount} solved ·{" "}
+                    {entry.penalty} min
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="form-message">No accepted submissions yet.</div>
+            <div className="form-message">No scored submissions yet.</div>
           )}
         </section>
       </section>
