@@ -43,8 +43,6 @@ function sub(
     verdict,
     passedCount: accepted ? 1 : 0,
     totalCount: 1,
-    earnedPoints: accepted ? 1 : 0,
-    possiblePoints: 1,
     createdAt: at(minutes),
   };
 }

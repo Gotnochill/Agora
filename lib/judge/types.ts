@@ -5,7 +5,6 @@ export type JudgeTestCase = {
   input: string;
   expectedOutput: string;
   isSample?: boolean;
-  points?: number;
 };
 
 export type ExecutionResult = {
@@ -29,8 +28,6 @@ export type JudgeResult = {
   verdict: SubmissionVerdict;
   passedCount: number;
   totalCount: number;
-  earnedPoints: number;
-  possiblePoints: number;
   runtimeMs: number | null;
   failureMessage?: string | null;
 };

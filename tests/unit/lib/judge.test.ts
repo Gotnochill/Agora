@@ -44,14 +44,12 @@ describe("judgeSubmission", () => {
       verdict: SubmissionVerdict.ACCEPTED,
       passedCount: 2,
       totalCount: 2,
-      earnedPoints: 2,
-      possiblePoints: 2,
       runtimeMs: 6,
       failureMessage: null,
     });
   });
 
-  it("continues after a wrong answer and awards later weighted tests", async () => {
+  it("continues after a wrong answer and counts later passing tests", async () => {
     let execution = 0;
     const executor: CodeExecutor = async () => ({
       stdout: execution++ === 0 ? "0\n" : "6\n",
@@ -65,10 +63,7 @@ describe("judgeSubmission", () => {
       code: "",
       executor,
       language: "python",
-      testCases: [
-        { ...testCases[0], points: 20 },
-        { ...testCases[1], points: 80 },
-      ],
+      testCases,
       timeLimitMs: 2000,
     });
 
@@ -76,8 +71,6 @@ describe("judgeSubmission", () => {
       verdict: SubmissionVerdict.WRONG_ANSWER,
       passedCount: 1,
       totalCount: 2,
-      earnedPoints: 80,
-      possiblePoints: 100,
     });
   });
 

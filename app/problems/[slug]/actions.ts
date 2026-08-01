@@ -19,8 +19,6 @@ type RunResult = {
   verdict: string;
   passedCount: number;
   totalCount: number;
-  earnedPoints: number;
-  possiblePoints: number;
   runtimeMs: number | null;
   failureMessage?: string | null;
 };
@@ -44,8 +42,6 @@ function runError(message: string): RunResult {
     verdict: SubmissionVerdict.RUNTIME_ERROR,
     passedCount: 0,
     totalCount: 0,
-    earnedPoints: 0,
-    possiblePoints: 0,
     runtimeMs: null,
     failureMessage: message,
   };
@@ -76,7 +72,7 @@ export async function submitSolution(formData: FormData) {
       timeLimitMs: true,
       testCases: {
         orderBy: { order: "asc" },
-        select: { input: true, expectedOutput: true, isSample: true, points: true },
+        select: { input: true, expectedOutput: true, isSample: true },
       },
     },
   });
@@ -101,7 +97,6 @@ export async function submitSolution(formData: FormData) {
       language: parsed.data.language,
       code: parsed.data.code,
       totalCount: problem.testCases.length,
-      possiblePoints: problem.testCases.reduce((total, testCase) => total + testCase.points, 0),
     },
     select: { id: true },
   });
@@ -159,8 +154,6 @@ export async function submitSolution(formData: FormData) {
         verdict: SubmissionVerdict.RUNTIME_ERROR,
         passedCount: 0,
         totalCount: problem.testCases.length,
-        earnedPoints: 0,
-        possiblePoints: problem.testCases.reduce((total, testCase) => total + testCase.points, 0),
         failureMessage: failureMessageFromError(error),
       },
     });
@@ -195,7 +188,7 @@ export async function runSolution(formData: FormData): Promise<RunResult> {
       testCases: {
         where: { isSample: true },
         orderBy: { order: "asc" },
-        select: { input: true, expectedOutput: true, isSample: true, points: true },
+        select: { input: true, expectedOutput: true, isSample: true },
       },
     },
   });
@@ -216,8 +209,6 @@ export async function runSolution(formData: FormData): Promise<RunResult> {
       verdict: SubmissionVerdict.RUNTIME_ERROR,
       passedCount: 0,
       totalCount: problem.testCases.length,
-      earnedPoints: 0,
-      possiblePoints: problem.testCases.reduce((total, testCase) => total + testCase.points, 0),
       runtimeMs: null,
       failureMessage: failureMessageFromError(error),
     };

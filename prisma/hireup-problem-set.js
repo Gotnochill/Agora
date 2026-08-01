@@ -37,26 +37,14 @@ const driverRebalancing = {
   difficulty: "MEDIUM",
   timeLimitMs: 2000,
   samples: [
-    { input: "4\n0 3 0 2\n1 1 2 1\n", expectedOutput: "3\n", points: 0 },
-    {
-      input: "5\n10 0 0 0 0\n0 0 0 0 10\n",
-      expectedOutput: "40\n",
-      points: 0,
-    },
+    { input: "4\n0 3 0 2\n1 1 2 1\n", expectedOutput: "3\n" },
+    { input: "5\n10 0 0 0 0\n0 0 0 0 10\n", expectedOutput: "40\n" },
   ],
   hidden: [
-    { input: "1\n7\n7\n", expectedOutput: "0\n", points: 10 },
-    { input: "5\n1 2 3 4 5\n1 2 3 4 5\n", expectedOutput: "0\n", points: 10 },
-    {
-      input: "6\n5 0 4 0 0 3\n0 3 0 4 2 3\n",
-      expectedOutput: "15\n",
-      points: 20,
-    },
-    {
-      input: "3\n0 0 1000000000\n1000000000 0 0\n",
-      expectedOutput: "2000000000\n",
-      points: 15,
-    },
+    { input: "1\n7\n7\n", expectedOutput: "0\n" },
+    { input: "5\n1 2 3 4 5\n1 2 3 4 5\n", expectedOutput: "0\n" },
+    { input: "6\n5 0 4 0 0 3\n0 3 0 4 2 3\n", expectedOutput: "15\n" },
+    { input: "3\n0 0 1000000000\n1000000000 0 0\n", expectedOutput: "2000000000\n" },
   ],
 };
 
@@ -71,25 +59,16 @@ const bestDispatchHub = {
   difficulty: "HARD",
   timeLimitMs: 3000,
   samples: [
-    {
-      input: "4\n0 1 1\n0 2 1\n2 3 1\n",
-      expectedOutput: "4 6 4 6\n",
-      points: 0,
-    },
-    { input: "2\n0 1 7\n", expectedOutput: "7 7\n", points: 0 },
+    { input: "4\n0 1 1\n0 2 1\n2 3 1\n", expectedOutput: "4 6 4 6\n" },
+    { input: "2\n0 1 7\n", expectedOutput: "7 7\n" },
   ],
   hidden: [
-    { input: "1\n", expectedOutput: "0\n", points: 10 },
-    { input: "3\n0 1 2\n1 2 3\n", expectedOutput: "7 5 8\n", points: 15 },
-    {
-      input: "5\n0 1 1\n0 2 2\n0 3 3\n0 4 4\n",
-      expectedOutput: "10 13 16 19 22\n",
-      points: 15,
-    },
+    { input: "1\n", expectedOutput: "0\n" },
+    { input: "3\n0 1 2\n1 2 3\n", expectedOutput: "7 5 8\n" },
+    { input: "5\n0 1 1\n0 2 2\n0 3 3\n0 4 4\n", expectedOutput: "10 13 16 19 22\n" },
     {
       input: "4\n0 1 1000000\n1 2 1000000\n2 3 1000000\n",
       expectedOutput: "6000000 4000000 4000000 6000000\n",
-      points: 10,
     },
   ],
 };
@@ -104,7 +83,6 @@ function buildHireupStressTests() {
   const aLongTransfer = {
     input: `${bigN}\n100000000 ${repeatValues(bigN - 1, 0)}${repeatValues(bigN - 1, 0).trim()} 100000000\n`,
     expectedOutput: `${(bigN - 1) * 100_000_000}\n`,
-    points: 20,
   };
 
   // A: each adjacent pair starts with its driver in the left zone and needs it
@@ -112,13 +90,11 @@ function buildHireupStressTests() {
   const aAlternating = {
     input: `${bigN}\n${sequenceLine(bigN, (index) => (index % 2 === 0 ? 1 : 0))}${sequenceLine(bigN, (index) => (index % 2 === 0 ? 0 : 1))}`,
     expectedOutput: `${bigN / 2}\n`,
-    points: 15,
   };
 
   const aAlreadyBalanced = {
     input: `${bigN}\n${repeatValues(bigN, 1000000)}${repeatValues(bigN, 1000000)}`,
     expectedOutput: "0\n",
-    points: 10,
   };
 
   // B: a long chain forces linear-time traversal and reroot propagation. For a
@@ -131,7 +107,6 @@ function buildHireupStressTests() {
       const right = (rightNodes * (rightNodes + 1)) / 2;
       return left + right;
     }),
-    points: 30,
   };
 
   // B: in a unit-weight star the center costs N-1 and every leaf costs 2N-3.
@@ -139,7 +114,6 @@ function buildHireupStressTests() {
   const bStar = {
     input: `${bigN}\n${starEdges}\n`,
     expectedOutput: `${bigN - 1} ${repeatValues(bigN - 1, 2 * bigN - 3)}`,
-    points: 20,
   };
 
   return {

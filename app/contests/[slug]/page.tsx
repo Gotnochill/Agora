@@ -38,8 +38,6 @@ export default async function ContestDetailPage({
           verdict: true,
           passedCount: true,
           totalCount: true,
-          earnedPoints: true,
-          possiblePoints: true,
           createdAt: true,
         },
       },

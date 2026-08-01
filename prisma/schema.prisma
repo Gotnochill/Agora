@@ -325,7 +325,6 @@ model TestCase {
   input          String
   expectedOutput String
   isSample       Boolean  @default(false)
-  points         Int      @default(1)
   order          Int      @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -345,8 +344,6 @@ model Submission {
   runtimeMs   Int?
   passedCount Int               @default(0)
   totalCount  Int               @default(0)
-  earnedPoints   Int               @default(0)
-  possiblePoints Int               @default(0)
   failureMessage String?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
@@ -550,8 +547,6 @@ model ContestSubmission {
   runtimeMs        Int?
   passedCount      Int               @default(0)
   totalCount       Int               @default(0)
-  earnedPoints     Int               @default(0)
-  possiblePoints   Int               @default(0)
   failureMessage   String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt

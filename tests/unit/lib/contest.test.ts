@@ -26,8 +26,6 @@ function submission(
     verdict,
     passedCount,
     totalCount,
-    earnedPoints: passedCount,
-    possiblePoints: totalCount,
     createdAt,
   };
 }

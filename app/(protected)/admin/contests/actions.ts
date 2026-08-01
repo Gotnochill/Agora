@@ -221,8 +221,6 @@ export async function finalizeContest(formData: FormData) {
           verdict: true,
           passedCount: true,
           totalCount: true,
-          earnedPoints: true,
-          possiblePoints: true,
           createdAt: true,
         },
       },

@@ -1051,14 +1051,12 @@ async function main() {
         input: testCase.input,
         expectedOutput: testCase.expectedOutput,
         isSample: true,
-        points: testCase.points ?? 1,
         order: index,
       })),
       ...[...problem.hidden, ...(hireupStress[problem.slug] ?? [])].map((testCase, index) => ({
         input: testCase.input,
         expectedOutput: testCase.expectedOutput,
         isSample: false,
-        points: testCase.points ?? 1,
         order: problem.samples.length + index,
       })),
     ];

@@ -55,8 +55,6 @@ export default async function ProblemDetailPage({
               verdict: true,
               passedCount: true,
               totalCount: true,
-              earnedPoints: true,
-              possiblePoints: true,
               runtimeMs: true,
               failureMessage: true,
             },

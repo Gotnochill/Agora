@@ -61,8 +61,6 @@ export type ContestSubmissionRow = {
   verdict: SubmissionVerdict;
   passedCount: number;
   totalCount: number;
-  earnedPoints: number;
-  possiblePoints: number;
   createdAt: Date;
 };
 
@@ -71,7 +69,7 @@ export type StandingRow = {
   score: number;
   solvedCount: number;
   penalty: number;
-  lastAcAt: Date | null;
+  lastScoredAt: Date | null;
   rank: number;
 };
 
@@ -198,9 +196,9 @@ function minutesFromStart(startsAt: Date, at: Date) {
 }
 
 function submissionScore(submission: ContestSubmissionRow) {
-  const possible = submission.possiblePoints || submission.totalCount;
-  const earned = submission.possiblePoints ? submission.earnedPoints : submission.passedCount;
-  return possible > 0 ? Math.round((earned * 100) / possible) : 0;
+  return submission.totalCount > 0
+    ? Math.round((submission.passedCount * 100) / submission.totalCount)
+    : 0;
 }
 
 export function computeStandings(
@@ -219,7 +217,7 @@ export function computeStandings(
 
   const stats = new Map<
     string,
-    { score: number; solvedCount: number; penalty: number; lastAcAt: Date | null }
+    { score: number; solvedCount: number; penalty: number; lastScoredAt: Date | null }
   >();
 
   for (const [key, attempts] of Array.from(byUserProblem.entries())) {
@@ -254,17 +252,17 @@ export function computeStandings(
       score: 0,
       solvedCount: 0,
       penalty: 0,
-      lastAcAt: null,
+      lastScoredAt: null,
     };
     current.score += bestScore;
     if (bestAttempt.verdict === SubmissionVerdict.ACCEPTED) {
       current.solvedCount += 1;
     }
     current.penalty += problemPenalty;
-    current.lastAcAt =
-      !current.lastAcAt || bestAttempt.createdAt > current.lastAcAt
+    current.lastScoredAt =
+      !current.lastScoredAt || bestAttempt.createdAt > current.lastScoredAt
         ? bestAttempt.createdAt
-        : current.lastAcAt;
+        : current.lastScoredAt;
     stats.set(userId, current);
   }
 
@@ -275,7 +273,7 @@ export function computeStandings(
         right.score - left.score ||
         right.solvedCount - left.solvedCount ||
         left.penalty - right.penalty ||
-        (left.lastAcAt?.getTime() ?? 0) - (right.lastAcAt?.getTime() ?? 0),
+        (left.lastScoredAt?.getTime() ?? 0) - (right.lastScoredAt?.getTime() ?? 0),
     );
 
   return ranked.map((row, index) => ({
@@ -283,7 +281,7 @@ export function computeStandings(
     score: row.score,
     solvedCount: row.solvedCount,
     penalty: row.penalty,
-    lastAcAt: row.lastAcAt,
+    lastScoredAt: row.lastScoredAt,
     rank: index + 1,
   }));
 }

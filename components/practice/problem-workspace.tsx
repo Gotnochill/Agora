@@ -18,8 +18,6 @@ type Submission = {
   verdict: string;
   passedCount: number;
   totalCount: number;
-  earnedPoints: number;
-  possiblePoints: number;
   runtimeMs: number | null;
   failureMessage: string | null;
   note?: string;
@@ -35,8 +33,6 @@ type EphemeralRunResult = {
   verdict: string;
   passedCount: number;
   totalCount: number;
-  earnedPoints: number;
-  possiblePoints: number;
   runtimeMs: number | null;
   failureMessage?: string | null;
 };
@@ -67,6 +63,11 @@ const starterCode: Record<string, string> = {
 };
 
 function SubmissionMeta({ submission }: Readonly<{ submission: Submission }>) {
+  const score =
+    submission.totalCount > 0
+      ? Math.round((submission.passedCount * 100) / submission.totalCount)
+      : 0;
+
   return (
     <>
       <strong className="verdict-label">
@@ -76,11 +77,7 @@ function SubmissionMeta({ submission }: Readonly<{ submission: Submission }>) {
       <span>
         {submission.passedCount}/{submission.totalCount} tests
       </span>
-      {submission.possiblePoints > 0 ? (
-        <span>
-          {submission.earnedPoints}/{submission.possiblePoints} points
-        </span>
-      ) : null}
+      {submission.totalCount > 0 ? <span>{score}/100 points</span> : null}
       <span>{submission.runtimeMs ?? 0}ms</span>
       {submission.note ? <span className="submission-note">{submission.note}</span> : null}
     </>
@@ -274,8 +271,6 @@ export function ProblemWorkspace({
         verdict: result.verdict,
         passedCount: result.passedCount,
         totalCount: result.totalCount,
-        earnedPoints: result.earnedPoints,
-        possiblePoints: result.possiblePoints,
         runtimeMs: result.runtimeMs,
         failureMessage: result.failureMessage ?? null,
         note,

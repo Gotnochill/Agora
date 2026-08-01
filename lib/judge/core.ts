@@ -55,14 +55,9 @@ export async function judgeSubmission({
   timeLimitMs: number;
 }): Promise<JudgeResult> {
   let passedCount = 0;
-  let earnedPoints = 0;
   let runtimeMs = 0;
   let verdict: SubmissionVerdict = SubmissionVerdict.ACCEPTED;
   let failureMessage: string | null = null;
-  const possiblePoints = testCases.reduce(
-    (total, testCase) => total + Math.max(0, testCase.points ?? 1),
-    0,
-  );
 
   for (const testCase of testCases) {
     const result = await executor({ language, code, stdin: testCase.input, timeLimitMs });
@@ -76,8 +71,6 @@ export async function judgeSubmission({
         verdict: SubmissionVerdict.COMPILE_ERROR,
         passedCount,
         totalCount: testCases.length,
-        earnedPoints: 0,
-        possiblePoints,
         runtimeMs,
         failureMessage: truncateFailureMessage(result.compileError),
       };
@@ -104,15 +97,12 @@ export async function judgeSubmission({
     }
 
     passedCount += 1;
-    earnedPoints += Math.max(0, testCase.points ?? 1);
   }
 
   return {
     verdict,
     passedCount,
     totalCount: testCases.length,
-    earnedPoints,
-    possiblePoints,
     runtimeMs,
     failureMessage,
   };
