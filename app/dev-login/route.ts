@@ -36,10 +36,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  const requestedRole = new URL(request.url).searchParams.get("role");
   const role: LocalDevRole =
-    new URL(request.url).searchParams.get("role") === "admin" ? "admin" : "member";
+    requestedRole === "admin" ? "admin" : requestedRole === "active" ? "active" : "member";
 
   await signIn(localDevProviderId(role), {
-    redirectTo: role === "admin" ? "/admin/cohort" : "/apply",
+    redirectTo: role === "admin" ? "/admin/cohort" : role === "active" ? "/dashboard" : "/apply",
   });
 }

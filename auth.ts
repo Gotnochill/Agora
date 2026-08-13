@@ -15,11 +15,12 @@ export const isGoogleOAuthConfigured = Boolean(
   process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET,
 );
 
-export type LocalDevRole = "admin" | "member";
+export type LocalDevRole = "admin" | "member" | "active";
 
 const LOCAL_DEV_IDENTITIES: Record<LocalDevRole, { id: string; email: string; name: string }> = {
   admin: { id: "local-dev-admin", email: "admin@shardup.local", name: "Local Admin" },
   member: { id: "local-dev-member", email: "applicant@shardup.local", name: "Local Applicant" },
+  active: { id: "local-dev-active", email: "member@shardup.local", name: "Local Member" },
 };
 
 export function localDevProviderId(role: LocalDevRole) {
@@ -29,6 +30,7 @@ export function localDevProviderId(role: LocalDevRole) {
 // Dev-only logins (admin + applicant) for local testing without Google. Off in production.
 function makeLocalDevProvider(role: LocalDevRole) {
   const isAdmin = role === "admin";
+  const isApplicant = role === "member";
   const { id, email, name } = LOCAL_DEV_IDENTITIES[role];
 
   return Credentials({
@@ -42,18 +44,18 @@ function makeLocalDevProvider(role: LocalDevRole) {
           name,
           role: isAdmin ? Role.ADMIN : Role.MEMBER,
           // The dev applicant is a test account — reset to PENDING on every login.
-          status: isAdmin ? UserStatus.ACTIVE : UserStatus.PENDING,
+          status: isApplicant ? UserStatus.PENDING : UserStatus.ACTIVE,
         },
         create: {
           email,
           name,
           role: isAdmin ? Role.ADMIN : Role.MEMBER,
-          status: isAdmin ? UserStatus.ACTIVE : UserStatus.PENDING,
+          status: isApplicant ? UserStatus.PENDING : UserStatus.ACTIVE,
         },
       });
 
       // Clear the old application so each login starts a fresh draft. Admins don't get one.
-      if (!isAdmin) {
+      if (isApplicant) {
         await prisma.application.deleteMany({ where: { userId: user.id } });
       }
 
@@ -82,7 +84,13 @@ const providers = [
         }),
       ]
     : []),
-  ...(isLocalDevAuthEnabled ? [makeLocalDevProvider("member"), makeLocalDevProvider("admin")] : []),
+  ...(isLocalDevAuthEnabled
+    ? [
+        makeLocalDevProvider("member"),
+        makeLocalDevProvider("active"),
+        makeLocalDevProvider("admin"),
+      ]
+    : []),
 ];
 
 export const { handlers, signIn, signOut, auth } = NextAuth({

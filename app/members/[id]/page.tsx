@@ -52,6 +52,7 @@ export default async function MemberProfilePage({
     session?.user?.id === member.id ||
     (session?.user?.role === Role.ADMIN && session.user.status === UserStatus.ACTIVE);
   const canNudge = session?.user?.status === UserStatus.ACTIVE && session.user.id !== member.id;
+  const canMessage = session?.user?.status === UserStatus.ACTIVE && session.user.id !== member.id;
   const isOwnProfile = session?.user?.status === UserStatus.ACTIVE && session.user.id === member.id;
   const isAdmin = session?.user?.role === Role.ADMIN && session.user.status === UserStatus.ACTIVE;
   const badges = isAdmin ? await prisma.badge.findMany({ orderBy: { name: "asc" } }) : [];
@@ -115,6 +116,11 @@ export default async function MemberProfilePage({
                 returnTo={`/members/${member.id}`}
               />
             </>
+          ) : null}
+          {canMessage ? (
+            <a className="secondary-button" href={`/messages?recipient=${member.id}`}>
+              Message
+            </a>
           ) : null}
         </aside>
 

@@ -17,6 +17,12 @@ export async function GET() {
     googleClientSecret: isConfigured(process.env.AUTH_GOOGLE_SECRET),
     judgeBaseUrl: process.env.JUDGE_PROVIDER === "fake" || isConfigured(process.env.JUDGE_BASE_URL),
     judgeApiKey: process.env.JUDGE_PROVIDER === "fake" || isConfigured(process.env.JUDGE_API_KEY),
+    chatRealtime:
+      process.env.NODE_ENV !== "production" ||
+      (isConfigured(process.env.CHAT_REALTIME_TOKEN_SECRET) &&
+        isConfigured(process.env.CHAT_REALTIME_PUBLISH_SECRET) &&
+        isConfigured(process.env.CHAT_REALTIME_INTERNAL_URL) &&
+        isConfigured(process.env.NEXT_PUBLIC_CHAT_WS_URL)),
   };
 
   let database = false;
@@ -44,6 +50,8 @@ export async function GET() {
           prisma.problem.count(),
           prisma.testCase.count(),
           prisma.submission.count(),
+          prisma.chatConversation.count(),
+          prisma.chatDelivery.count(),
         ]);
         schema = true;
       } catch (error) {

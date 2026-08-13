@@ -76,6 +76,27 @@ enum NotificationType {
   NUDGE_RECEIVED
 }
 
+enum ChatConversationType {
+  DIRECT
+  GROUP
+}
+
+enum ChatMemberRole {
+  OWNER
+  MEMBER
+}
+
+enum ChatReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+enum ChatRateLimitScope {
+  MESSAGE_SEND
+  CONVERSATION_CREATE
+}
+
 model User {
   id            String       @id @default(cuid())
   name          String?
@@ -112,6 +133,15 @@ model User {
   recommendedResources Resource[]    @relation("ResourceRecommender")
   notifications Notification[] @relation("NotificationActor")
   receivedNotifications Notification[] @relation("NotificationRecipient")
+  createdChatConversations ChatConversation[] @relation("ChatConversationCreator")
+  chatMemberships ChatMember[]
+  sentPendingChatMessages PendingChatMessage[] @relation("PendingChatMessageSender")
+  chatDeliveries ChatDelivery[] @relation("ChatDeliveryRecipient")
+  chatSendReceipts ChatSendReceipt[] @relation("ChatSendReceiptSender")
+  chatReports ChatReport[] @relation("ChatReportReporter")
+  reportedChatMessages ChatReport[] @relation("ChatReportSender")
+  resolvedChatReports ChatReport[] @relation("ChatReportResolver")
+  chatRateLimits ChatRateLimit[]
 }
 
 // The yearly application round. One cohort is active at a time; admins edit its
@@ -597,4 +627,133 @@ model Notification {
   @@index([createdAt])
   @@index([actorId])
   @@index([recipientId])
+}
+
+// Conversation and membership metadata is durable. Message content is not:
+// pending payloads are removed after every recipient durably acknowledges them.
+model ChatConversation {
+  id             String               @id @default(cuid())
+  type           ChatConversationType
+  title          String?
+  directKey      String?              @unique
+  createdById    String
+  lastActivityAt DateTime             @default(now())
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  creator        User                 @relation("ChatConversationCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members        ChatMember[]
+  pendingMessages PendingChatMessage[]
+  sendReceipts   ChatSendReceipt[]
+  reports        ChatReport[]
+
+  @@index([lastActivityAt])
+  @@index([createdById])
+}
+
+model ChatMember {
+  id             String         @id @default(cuid())
+  conversationId String
+  userId         String
+  role           ChatMemberRole @default(MEMBER)
+  joinedAt       DateTime       @default(now())
+  leftAt         DateTime?
+  lastReadAt     DateTime?
+
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId, leftAt, conversationId])
+}
+
+model PendingChatMessage {
+  id              String   @id @default(cuid())
+  conversationId  String
+  senderId        String
+  clientMessageId String
+  body             String
+  createdAt        DateTime @default(now())
+  expiresAt        DateTime
+
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User             @relation("PendingChatMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  deliveries   ChatDelivery[]
+
+  @@unique([senderId, clientMessageId])
+  @@index([conversationId, createdAt, id])
+  @@index([expiresAt])
+}
+
+model ChatDelivery {
+  id          String   @id @default(cuid())
+  messageId   String
+  recipientId String
+  createdAt   DateTime @default(now())
+
+  message   PendingChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  recipient User               @relation("ChatDeliveryRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, recipientId])
+  @@index([recipientId, createdAt, messageId])
+}
+
+// Receipts contain no message content. They keep send retries idempotent after
+// the corresponding pending payload has already been acknowledged and deleted.
+model ChatSendReceipt {
+  id              String   @id @default(cuid())
+  senderId        String
+  clientMessageId String
+  messageId       String
+  conversationId  String
+  createdAt        DateTime @default(now())
+  expiresAt        DateTime
+
+  sender       User             @relation("ChatSendReceiptSender", fields: [senderId], references: [id], onDelete: Cascade)
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, clientMessageId])
+  @@index([expiresAt])
+  @@index([conversationId, createdAt])
+}
+
+// A report is an explicit user-provided moderation snapshot and is the only
+// server-side record allowed to retain content after normal delivery.
+model ChatReport {
+  id               String           @id @default(cuid())
+  conversationId   String
+  reporterId       String
+  reportedSenderId String
+  resolvedById     String?
+  messageId        String
+  body             String
+  note             String?
+  messageCreatedAt DateTime
+  status           ChatReportStatus @default(OPEN)
+  createdAt        DateTime         @default(now())
+  resolvedAt       DateTime?
+
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  reporter       User             @relation("ChatReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedSender User             @relation("ChatReportSender", fields: [reportedSenderId], references: [id], onDelete: Cascade)
+  resolvedBy     User?            @relation("ChatReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@unique([reporterId, messageId])
+  @@index([status, createdAt])
+  @@index([conversationId])
+}
+
+model ChatRateLimit {
+  id          String             @id @default(cuid())
+  userId      String
+  scope       ChatRateLimitScope
+  windowStart DateTime
+  count       Int                @default(0)
+  expiresAt   DateTime
+  updatedAt   DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, scope])
+  @@index([expiresAt])
 }

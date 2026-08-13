@@ -53,6 +53,9 @@ export default async function JoinPage() {
               >
                 Continue as applicant (dev)
               </a>
+              <a className="secondary-button" href="/dev-login?role=active">
+                Continue as member (dev)
+              </a>
               <a className="secondary-button" href="/dev-login?role=admin">
                 Continue as admin (dev)
               </a>
