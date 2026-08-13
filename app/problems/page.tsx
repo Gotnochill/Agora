@@ -26,6 +26,7 @@ export default async function ProblemsPage() {
       title: true,
       tags: true,
       difficulty: true,
+      contestProblems: { select: { contestId: true }, take: 1 },
     },
   });
   const acceptedSubmissions = await prisma.submission.findMany({
@@ -70,8 +71,10 @@ export default async function ProblemsPage() {
     },
   });
   const leaderboard = rankPracticeUsers(rankedSubmissions, users).slice(0, 10);
-  const contestProblems = problems.filter((problem) => problem.tags.includes("Contest"));
-  const weekProblems = problems.filter((problem) => !problem.tags.includes("Contest"));
+  const isContestProblem = (problem: (typeof problems)[number]) =>
+    problem.contestProblems.length > 0 || problem.tags.includes("Contest");
+  const contestProblems = problems.filter(isContestProblem);
+  const weekProblems = problems.filter((problem) => !isContestProblem(problem));
   const weeks = groupProblemsByWeek(weekProblems);
 
   return (
