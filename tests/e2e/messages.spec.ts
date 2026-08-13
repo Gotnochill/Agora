@@ -33,7 +33,13 @@ test.describe("messages", () => {
       await expect(sentMessage).not.toContainText("Sending...");
       await expect(sentMessage).not.toContainText("Not sent");
 
-      await recipient.goto("/messages");
+      await recipient.bringToFront();
+      await recipient.evaluate(() => window.dispatchEvent(new Event("focus")));
+      const messageIndicator = recipient.getByRole("link", {
+        name: /Messages, \d+ unread/,
+      });
+      await expect(messageIndicator).toBeVisible();
+      await messageIndicator.click();
       await expect(recipient.locator(".chat-message", { hasText: message })).toContainText(
         message,
         {

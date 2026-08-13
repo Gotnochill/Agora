@@ -5,6 +5,7 @@ import {
   relativeTimeFromNow,
   unreadNotificationCount,
 } from "../lib/notifications";
+import MessageIndicator from "./message-indicator";
 import NotificationBell, { type NotificationItem } from "./notification-bell";
 import SiteHeader from "./site-header";
 
@@ -36,7 +37,6 @@ export default async function AccountBar({
     <SiteHeader>
       <a href="/dashboard">Dashboard</a>
       <a href="/masterclass">Masterclass</a>
-      <a href="/messages">Messages</a>
       <a href={`/members/${session.user.id}`}>Profile</a>
       {session.user.role === "ADMIN" ? <a href="/admin/cohort">Cohort</a> : null}
       <form
@@ -47,6 +47,7 @@ export default async function AccountBar({
       >
         <button type="submit">Sign out</button>
       </form>
+      <MessageIndicator userId={session.user.id} />
       <NotificationBell items={notificationItems} unreadCount={unreadCount} />
     </SiteHeader>
   );

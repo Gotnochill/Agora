@@ -44,6 +44,7 @@ describe("AccountBar", () => {
       "href",
       "/masterclass",
     );
+    expect(screen.getByRole("link", { name: "Messages" })).toHaveAttribute("href", "/messages");
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Cohort" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Applications" })).not.toBeInTheDocument();

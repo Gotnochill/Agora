@@ -77,6 +77,7 @@ export default function MessagesClient({
   const [creating, setCreating] = useState(false);
   const startedRecipient = useRef(false);
   const broadcastRef = useRef<BroadcastChannel | null>(null);
+  const selectedIdRef = useRef(selectedId);
 
   const refreshLocal = useCallback(async () => {
     setLocalMessages(await listLocalChatMessages(currentUser.id));
@@ -105,6 +106,13 @@ export default function MessagesClient({
   const storeAndAcknowledge = useCallback(
     async (envelopes: IncomingChatEnvelope[]) => {
       for (const envelope of envelopes) await storeIncomingMessage(currentUser.id, envelope);
+      const openConversationId = selectedIdRef.current;
+      if (
+        openConversationId &&
+        envelopes.some((envelope) => envelope.conversationId === openConversationId)
+      ) {
+        await markLocalConversationRead(currentUser.id, openConversationId);
+      }
       await flushAcknowledgements();
       notifyLocalChange();
     },
@@ -204,6 +212,7 @@ export default function MessagesClient({
   }, [currentUser.id, recoverInbox, storeAndAcknowledge]);
 
   useEffect(() => {
+    selectedIdRef.current = selectedId;
     if (!selectedId) return;
     void markLocalConversationRead(currentUser.id, selectedId).then(notifyLocalChange);
     void fetch("/api/chat/read", {

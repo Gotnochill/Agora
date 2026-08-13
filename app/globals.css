@@ -319,7 +319,13 @@ img {
   margin-left: 8px;
 }
 
-.notification-bell {
+.message-indicator-wrap {
+  display: inline-flex;
+  margin-left: 8px;
+}
+
+.notification-bell,
+.message-indicator {
   position: relative;
   display: inline-grid;
   place-items: center;
@@ -333,8 +339,14 @@ img {
   cursor: pointer;
 }
 
-.notification-bell:hover {
+.notification-bell:hover,
+.message-indicator:hover {
   background: var(--surface-hover);
+}
+
+.message-indicator.is-unread {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface));
 }
 
 .notification-bell-badge {
