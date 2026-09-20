@@ -16,3 +16,4 @@ playwright/.cache/
 .vercel
 infra/*.generated.*
 public/excalidraw-assets/
+public/pdf.worker.min.mjs

@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { ResourceWithRelations } from "../../lib/bookshelf/types";
+import PaperReader from "./paper-reader";
 
 export default function ResourceDetails({ resource }: { resource: ResourceWithRelations }) {
   /* prettier-ignore */
@@ -83,6 +84,10 @@ export default function ResourceDetails({ resource }: { resource: ResourceWithRe
           </div>
         </div>
       </div>
+
+      {resource.type === "RESEARCH_PAPER" && (
+        <PaperReader title={resource.title} url={resource.resourceLink} />
+      )}
     </article>
   );
 }

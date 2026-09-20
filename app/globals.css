@@ -3129,6 +3129,121 @@ body.is-resizing-panes {
   }
 }
 
+.paper-reader {
+  margin-top: 48px;
+  border: 2px solid var(--ink);
+  background: var(--surface);
+  box-shadow: 7px 7px 0 var(--shadow);
+  overflow: hidden;
+}
+
+.paper-reader-heading,
+.paper-reader-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.paper-reader-heading {
+  justify-content: space-between;
+}
+
+.paper-reader-heading h2,
+.paper-reader-heading p {
+  margin: 0;
+}
+
+.paper-reader-controls {
+  flex-wrap: wrap;
+  background: var(--paper);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.paper-reader-control-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.paper-reader-controls button {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--ink);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.paper-reader-controls button:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.paper-reader-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.paper-reader-control-divider {
+  width: 1px;
+  height: 24px;
+  margin-inline: 4px;
+  background: var(--line);
+}
+
+.paper-reader-document {
+  min-height: 360px;
+  padding: 16px;
+  overflow: auto;
+  background: var(--surface-muted);
+}
+
+.paper-reader-document .react-pdf__Document {
+  width: max-content;
+  min-width: 100%;
+  margin: 0 auto;
+}
+
+.paper-reader-document .react-pdf__Page {
+  width: max-content;
+  margin: 0 auto;
+  box-shadow: 0 2px 12px var(--shadow);
+}
+
+.paper-reader-document canvas {
+  display: block;
+}
+
+.paper-reader-message {
+  display: grid;
+  min-height: 240px;
+  margin: 0;
+  padding: 24px;
+  place-content: center;
+  gap: 16px;
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .paper-reader {
+    margin-top: 32px;
+    box-shadow: 4px 4px 0 var(--shadow);
+  }
+
+  .paper-reader-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .paper-reader-control-divider {
+    display: none;
+  }
+}
+
 /* Ephemeral messaging workspace. */
 .chat-page {
   width: min(1180px, calc(100% - 32px));
