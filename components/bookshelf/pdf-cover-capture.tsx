@@ -10,7 +10,7 @@ const JPEG_QUALITY = 0.85;
 
 type CoverStatus = "idle" | "working" | "ready" | "error";
 
-export default function PdfCoverCapture() {
+export default function PdfCoverCapture({ pdfInputId = "pdf" }: { pdfInputId?: string }) {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<CoverStatus>("idle");
 
@@ -72,7 +72,7 @@ export default function PdfCoverCapture() {
   );
 
   useEffect(() => {
-    const input = document.getElementById("pdf") as HTMLInputElement | null;
+    const input = document.getElementById(pdfInputId) as HTMLInputElement | null;
 
     if (!input) {
       return;
@@ -92,7 +92,7 @@ export default function PdfCoverCapture() {
 
     input.addEventListener("change", onChange);
     return () => input.removeEventListener("change", onChange);
-  }, [clearCover, generateCover]);
+  }, [clearCover, generateCover, pdfInputId]);
 
   return (
     <>
