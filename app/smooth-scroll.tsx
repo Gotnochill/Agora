@@ -9,7 +9,8 @@ export default function SmoothScroll() {
       duration: 0.8,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
-      prevent: (node) => node.classList.contains("cm-scroller"),
+      prevent: (node) =>
+        node.classList.contains("cm-scroller") || node.classList.contains("paper-reader-document"),
     });
 
     let rafId: number;

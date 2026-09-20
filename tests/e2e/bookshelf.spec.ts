@@ -78,6 +78,11 @@ test.describe("bookshelf public", () => {
     await page.getByRole("button", { name: "Zoom in" }).click();
     await expect(page.getByText("125%")).toBeVisible();
 
+    const readerDocument = page.locator(".paper-reader-document");
+    await readerDocument.hover();
+    await page.mouse.wheel(0, 400);
+    await expect.poll(() => readerDocument.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
+
     await page.getByRole("button", { name: "Exit fullscreen" }).click();
     await expect.poll(() => page.evaluate(() => document.fullscreenElement)).toBe(null);
   });
