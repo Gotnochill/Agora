@@ -5,7 +5,17 @@
 // generated Prisma Client loads correctly instead of Playwright's CJS loader.
 import { PrismaClient } from "../../lib/generated/prisma/client.ts";
 import { createPrismaAdapter } from "../../lib/prisma-adapter.ts";
-import { DATABASE_URL, TEST_EVENT_TITLE, TEST_PROBLEM_SLUG, TEST_PROBLEM_TITLE } from "./env.ts";
+import {
+  DATABASE_URL,
+  TEST_EVENT_TITLE,
+  TEST_PAPER_TITLE,
+  TEST_PROBLEM_SLUG,
+  TEST_PROBLEM_TITLE,
+  TEST_UNAVAILABLE_PAPER_TITLE,
+} from "./env.ts";
+
+const TEST_PDF_DATA_URL =
+  "data:application/pdf;base64,JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA1IDAgUiA+PiA+PiAvQ29udGVudHMgNCAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCA1OSA+PgpzdHJlYW0KQlQgL0YxIDI0IFRmIDcyIDcwMCBUZCAoU2hhcmRVcCBSZXNlYXJjaCBQYXBlciBUZXN0KSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCjAwMDAwMDAyNDEgMDAwMDAgbiAKMDAwMDAwMDM0OSAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDYgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjQxOQolJUVPRgo=";
 
 const PYTHON_SUM_REFERENCE = `import sys
 
@@ -66,6 +76,34 @@ try {
         ],
       },
     },
+  });
+
+  const paperCategory = await prisma.category.upsert({
+    where: { slug: "research-papers" },
+    update: { name: "Research Papers" },
+    create: { name: "Research Papers", slug: "research-papers" },
+  });
+
+  await prisma.resource.deleteMany({
+    where: { title: { in: [TEST_PAPER_TITLE, TEST_UNAVAILABLE_PAPER_TITLE] } },
+  });
+  await prisma.resource.createMany({
+    data: [
+      {
+        title: TEST_PAPER_TITLE,
+        author: "ShardUp",
+        type: "RESEARCH_PAPER",
+        resourceLink: TEST_PDF_DATA_URL,
+        categoryId: paperCategory.id,
+      },
+      {
+        title: TEST_UNAVAILABLE_PAPER_TITLE,
+        author: "ShardUp",
+        type: "RESEARCH_PAPER",
+        resourceLink: "/e2e-missing-paper.pdf",
+        categoryId: paperCategory.id,
+      },
+    ],
   });
 } finally {
   await prisma.$disconnect();

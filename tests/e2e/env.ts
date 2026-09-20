@@ -7,3 +7,5 @@ export const DATABASE_URL =
 export const TEST_EVENT_TITLE = "E2E Automated Test Event";
 export const TEST_PROBLEM_SLUG = "e2e-sum-two-numbers";
 export const TEST_PROBLEM_TITLE = "E2E Sum Two Numbers";
+export const TEST_PAPER_TITLE = "E2E Research Paper";
+export const TEST_UNAVAILABLE_PAPER_TITLE = "E2E Unavailable Research Paper";

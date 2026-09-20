@@ -13,6 +13,7 @@ export default function SiteHeader({
       <nav className="nav-links">
         <a href="/#about">About</a>
         <a href="/members">Members</a>
+        <a href="/bookshelf">Bookshelf</a>
         <a href="/events">Events</a>
         <a href="/contests">Contests</a>
         <a href="/hireup">HireUp</a>

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { TEST_PAPER_TITLE, TEST_UNAVAILABLE_PAPER_TITLE } from "./env";
 
 test.describe("bookshelf public", () => {
   test("anonymous user can view the bookshelf landing page", async ({ page }) => {
@@ -53,6 +54,47 @@ test.describe("bookshelf public", () => {
 
     // 3. Verify h1 contains the title of the resource
     await expect(page.locator("h1")).toContainText(expectedTitle);
+  });
+
+  test("user can read a research paper in the embedded reader", async ({ page }) => {
+    await page.goto("/bookshelf/research-papers");
+    await page.getByRole("link", { name: TEST_PAPER_TITLE }).click();
+
+    await expect(page.locator(".paper-reader")).toBeVisible();
+    await expect(page.locator(".paper-reader canvas")).toBeVisible();
+    await expect(page.getByText("Page 1 of 1")).toBeVisible();
+
+    await page.getByRole("button", { name: "Fullscreen" }).click();
+    await expect
+      .poll(() =>
+        page.evaluate(() => document.fullscreenElement?.classList.contains("paper-reader")),
+      )
+      .toBe(true);
+
+    const controlsBox = await page.locator(".paper-reader-controls").boundingBox();
+    const documentBox = await page.locator(".paper-reader-document").boundingBox();
+    expect(controlsBox?.x).toBeLessThan(documentBox?.x ?? 0);
+
+    await page.getByRole("button", { name: "Zoom in" }).click();
+    await expect(page.getByText("125%")).toBeVisible();
+
+    const readerDocument = page.locator(".paper-reader-document");
+    await readerDocument.hover();
+    await page.mouse.wheel(0, 400);
+    await expect.poll(() => readerDocument.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
+
+    await page.getByRole("button", { name: "Exit fullscreen" }).click();
+    await expect.poll(() => page.evaluate(() => document.fullscreenElement)).toBe(null);
+  });
+
+  test("reader keeps an external fallback when a paper cannot load", async ({ page }) => {
+    await page.goto("/bookshelf/research-papers");
+    await page.getByRole("link", { name: TEST_UNAVAILABLE_PAPER_TITLE }).click();
+
+    await expect(page.locator(".paper-reader-message[role='alert']")).toContainText(
+      "could not be displayed",
+    );
+    await expect(page.getByRole("link", { name: "Open PDF in a new tab" })).toBeVisible();
   });
 
   test("returns 404 for an unknown resource", async ({ page }) => {
