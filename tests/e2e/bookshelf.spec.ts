@@ -64,8 +64,22 @@ test.describe("bookshelf public", () => {
     await expect(page.locator(".paper-reader canvas")).toBeVisible();
     await expect(page.getByText("Page 1 of 1")).toBeVisible();
 
+    await page.getByRole("button", { name: "Fullscreen" }).click();
+    await expect
+      .poll(() =>
+        page.evaluate(() => document.fullscreenElement?.classList.contains("paper-reader")),
+      )
+      .toBe(true);
+
+    const controlsBox = await page.locator(".paper-reader-controls").boundingBox();
+    const documentBox = await page.locator(".paper-reader-document").boundingBox();
+    expect(controlsBox?.x).toBeLessThan(documentBox?.x ?? 0);
+
     await page.getByRole("button", { name: "Zoom in" }).click();
     await expect(page.getByText("125%")).toBeVisible();
+
+    await page.getByRole("button", { name: "Exit fullscreen" }).click();
+    await expect.poll(() => page.evaluate(() => document.fullscreenElement)).toBe(null);
   });
 
   test("reader keeps an external fallback when a paper cannot load", async ({ page }) => {

@@ -41,7 +41,7 @@ export default function PdfDocument({ title, url }: { title: string; url: string
   }
 
   return (
-    <>
+    <div className="paper-reader-workspace">
       <div className="paper-reader-controls" aria-label="PDF controls">
         <div className="paper-reader-control-group">
           <button
@@ -107,6 +107,6 @@ export default function PdfDocument({ title, url }: { title: string; url: string
           ) : null}
         </Document>
       </div>
-    </>
+    </div>
   );
 }
