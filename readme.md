@@ -207,6 +207,8 @@ After deploying contest schema changes, run `npm run prisma:migrate` against you
 
 Admins manage bookshelf resources at `/admin/bookshelf`. Each resource is a full PDF (up to 50MB):
 
+- Active members recommend books and research papers at `/bookshelf/submit`. Recommendations stay in the admin queue until approved or rejected; members do not upload files.
+- Admins can upload resources directly or attach a PDF when approving a recommendation. Approval publishes the uploaded PDF with the member's attribution. Submitted links are review references, not public resource links; rejection publishes nothing.
 - Uploads go to [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) storage (`bookshelf/…` prefix, public access) and require `BLOB_READ_WRITE_TOKEN` (create a Storage bucket in the Vercel dashboard and copy its read/write token).
 - When a PDF is selected, the first page is rendered to a JPEG in the browser and stored as the resource's cover image, so cards show a real preview instead of just the title.
 - Resources show a **PDF** badge on the bookshelf and open in the built-in reader on their detail page: page navigation, page jump, zoom and fit-height, full-PDF text search with match navigation, keyboard shortcuts (arrows, Home/End, `+`/`-`, `/` to search), a reading progress bar, fullscreen mode, and a download link.
