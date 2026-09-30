@@ -2877,6 +2877,31 @@ body.is-resizing-panes {
 }
 
 /* Bookshelf styles */
+.bookshelf-admin-resource-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.bookshelf-admin-resource-row > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.bookshelf-admin-resource-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bookshelf-admin-resource-actions .secondary-button {
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .bookshelf-admin-resource-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .bookshelf-submission-form {
   max-width: 720px;
   margin-bottom: 24px;
